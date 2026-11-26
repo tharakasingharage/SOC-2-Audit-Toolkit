@@ -1,0 +1,1781 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>SOC 2 Audit Toolkit — plan, fieldwork &amp; reporting</title>
+<style>
+:root{
+  --navy:#16324f; --navy2:#1e3a5f; --accent:#2563eb; --accent2:#1d4ed8;
+  --bg:#eef1f6; --card:#ffffff; --border:#d8e0ea; --ink:#1f2937; --muted:#64748b;
+  --ok:#15803d; --okbg:#dcfce7; --warn:#b45309; --warnbg:#fef3c7;
+  --bad:#b91c1c; --badbg:#fee2e2; --gray:#64748b; --graybg:#e2e8f0;
+  --radius:10px; --shadow:0 1px 2px rgba(16,24,40,.06),0 1px 3px rgba(16,24,40,.1);
+}
+*{box-sizing:border-box}
+html,body{margin:0;padding:0}
+body{font-family:system-ui,-apple-system,"Segoe UI",Roboto,"Helvetica Neue",Arial,sans-serif;
+  background:var(--bg); color:var(--ink); font-size:15px; line-height:1.45;}
+/* ---------- top bar ---------- */
+.topbar{background:linear-gradient(120deg,var(--navy),var(--navy2)); color:#fff; padding:10px 16px;
+  display:flex; align-items:center; gap:14px; flex-wrap:wrap; position:sticky; top:0; z-index:30;}
+.brand{font-weight:700; font-size:clamp(15px,2.2vw,18px); letter-spacing:.2px; display:flex; align-items:center; gap:9px;}
+.brand .logo{width:30px;height:30px;border-radius:8px;background:rgba(255,255,255,.14);display:flex;align-items:center;justify-content:center;font-size:16px;}
+.top-actions{margin-left:auto; display:flex; gap:8px; align-items:center; flex-wrap:wrap;}
+#saveState{font-size:12px; opacity:.75; margin-right:2px;}
+/* ---------- buttons ---------- */
+.btn{border:1px solid var(--border); background:#fff; color:var(--ink); border-radius:8px;
+  padding:7px 13px; font-size:13.5px; font-weight:600; cursor:pointer; text-decoration:none; display:inline-flex; align-items:center; gap:6px;}
+.btn:hover{background:#f1f5f9}
+.btn-primary{background:var(--accent); border-color:var(--accent); color:#fff;}
+.btn-primary:hover{background:var(--accent2)}
+.btn-danger{color:var(--bad); border-color:#f3c6c6}
+.btn-danger:hover{background:#fef2f2}
+.btn-sm{padding:4px 10px; font-size:12.5px}
+.topbar .btn{background:rgba(255,255,255,.1); border-color:rgba(255,255,255,.25); color:#fff;}
+.topbar .btn:hover{background:rgba(255,255,255,.2)}
+/* ---------- tabs ---------- */
+.tabs{display:flex; gap:6px; padding:10px 16px 0; max-width:1200px; margin:0 auto; overflow-x:auto; -webkit-overflow-scrolling:touch;}
+.tabs button{flex:0 0 auto; border:1px solid var(--border); border-bottom:none; background:#e6ebf2; color:var(--muted);
+  padding:9px 16px; border-radius:10px 10px 0 0; font-size:14px; font-weight:600; cursor:pointer; white-space:nowrap;}
+.tabs button.active{background:var(--card); color:var(--navy); box-shadow:0 -2px 0 var(--accent) inset;}
+.tabs .badge{display:inline-block; margin-left:7px; background:#cbd5e1; color:#334155; border-radius:99px;
+  font-size:11px; padding:1px 8px; font-weight:700;}
+.tabs button.active .badge{background:var(--accent); color:#fff;}
+/* ---------- layout ---------- */
+main{max-width:1200px; margin:0 auto; padding:16px 16px 60px;}
+section[hidden]{display:none}
+.card{background:var(--card); border:1px solid var(--border); border-radius:var(--radius); box-shadow:var(--shadow);
+  padding:18px 20px; margin-bottom:16px;}
+.card h2{margin:0 0 6px; font-size:17px; color:var(--navy);}
+.card .sub{color:var(--muted); font-size:13px; margin:0 0 14px;}
+.grid{display:grid; grid-template-columns:repeat(auto-fit,minmax(230px,1fr)); gap:12px;}
+.field{display:flex; flex-direction:column; gap:4px;}
+.field > label{font-size:12.5px; font-weight:700; color:var(--muted); text-transform:uppercase; letter-spacing:.4px;}
+.field input,.field select,.field textarea{border:1px solid var(--border); border-radius:8px; padding:8px 10px;
+  font-size:14px; font-family:inherit; color:var(--ink); background:#fff; width:100%;}
+.field textarea{resize:vertical; min-height:64px;}
+.field input:focus,.field select:focus,.field textarea:focus{outline:2px solid #bfdbfe; border-color:var(--accent);}
+.field .hint{font-size:11.5px; color:var(--muted); font-weight:400; text-transform:none; letter-spacing:0;}
+.span2{grid-column:1/-1}
+/* ---------- criteria cards ---------- */
+.catgrid{display:grid; grid-template-columns:repeat(auto-fit,minmax(215px,1fr)); gap:10px;}
+.catcard{border:1.5px solid var(--border); border-radius:10px; padding:12px 14px; cursor:pointer; background:#fff;
+  display:flex; flex-direction:column; gap:5px; transition:border-color .15s, background .15s; user-select:none;}
+.catcard:hover{border-color:#9db4d0}
+.catcard.on{border-color:var(--accent); background:#eff6ff;}
+.catcard.locked{cursor:default; background:#f8fafc;}
+.catcard input{accent-color:var(--accent)}
+.catcard b{font-size:14px; color:var(--navy)}
+.catcard .cnt{margin-left:auto; font-size:12px; background:var(--graybg); color:#334155; border-radius:99px; padding:1px 9px; font-weight:700;}
+.catcard p{margin:0; font-size:12px; color:var(--muted); line-height:1.35;}
+/* ---------- control scope table ---------- */
+.scope-group{margin-top:14px}
+.scope-group h3{font-size:13.5px; color:var(--navy); margin:14px 0 6px; display:flex; align-items:center; gap:10px;}
+.scope-group .rowline{display:flex; align-items:flex-start; gap:9px; padding:5px 8px; border-radius:7px;}
+.scope-group .rowline:hover{background:#f1f5f9}
+.scope-group .rowline input{margin-top:3px; accent-color:var(--accent); flex:0 0 auto}
+.scope-group .ref{font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace; font-size:12px; font-weight:700;
+  color:var(--navy); background:#e8eef7; border-radius:5px; padding:1px 7px; flex:0 0 auto; margin-top:1px;}
+.scope-group .t{font-size:13.5px; font-weight:600}
+.scope-group .f{font-size:12px; color:var(--muted)}
+.searchline{display:flex; gap:10px; align-items:center; margin-top:8px; flex-wrap:wrap}
+.searchline input,.searchline select{border:1px solid var(--border); border-radius:8px; padding:7px 10px; font-size:13.5px; font-family:inherit;}
+.searchline input{flex:1 1 220px}
+/* ---------- plan summary strip ---------- */
+.sumstrip{display:flex; gap:22px; flex-wrap:wrap; margin-top:4px}
+.sumstrip div{font-size:13px; color:var(--muted)}
+.sumstrip b{display:block; font-size:21px; color:var(--navy)}
+/* ---------- fieldwork ---------- */
+.progress-wrap{display:flex; align-items:center; gap:14px; flex-wrap:wrap}
+.pbar{flex:1 1 260px; height:12px; background:#e2e8f0; border-radius:99px; overflow:hidden; min-width:200px}
+.pbar>div{height:100%; background:linear-gradient(90deg,var(--accent),#3b82f6); border-radius:99px; transition:width .3s}
+.status-chips{display:flex; gap:8px; flex-wrap:wrap}
+.chip{font-size:12px; border-radius:99px; padding:3px 11px; font-weight:700; background:var(--graybg); color:#334155}
+.chip.st-effective{background:var(--okbg); color:var(--ok)}
+.chip.st-exception{background:var(--warnbg); color:var(--warn)}
+.chip.st-deficient{background:var(--badbg); color:var(--bad)}
+.chip.st-na{background:var(--graybg); color:var(--gray)}
+.chip.st-nottested{background:#f1f5f9; color:#94a3b8}
+.catbar{margin-top:10px; display:grid; grid-template-columns:repeat(auto-fit,minmax(180px,1fr)); gap:10px}
+.catbar .cb{font-size:11.5px; color:var(--muted)}
+.catbar .cb .lbl{display:flex; justify-content:space-between; margin-bottom:3px}
+.catbar .cb .tr{height:7px; background:#e2e8f0; border-radius:99px; overflow:hidden}
+.catbar .cb .tr>div{height:100%; background:var(--ok)}
+/* control cards */
+.ctrl-card{border:1px solid var(--border); border-radius:10px; background:#fff; margin-bottom:12px; box-shadow:var(--shadow); overflow:hidden}
+.ctrl-card.exc{border-left:4px solid var(--warn)}
+.ctrl-card.def{border-left:4px solid var(--bad)}
+.ctrl-card.eff{border-left:4px solid var(--ok)}
+.ctrl-card.na{border-left:4px solid #94a3b8; opacity:.75}
+.ctrl-head{display:flex; align-items:center; gap:10px; padding:11px 14px; background:#f8fafc; border-bottom:1px solid var(--border); flex-wrap:wrap}
+.ctrl-head .ref{font-family:ui-monospace,Menlo,Consolas,monospace; font-size:12px; font-weight:700; color:var(--navy);
+  background:#e8eef7; border-radius:5px; padding:2px 8px;}
+.ctrl-head b{font-size:14.5px}
+.ctrl-head .pill{margin-left:auto}
+.pill{font-size:12px; font-weight:800; border-radius:99px; padding:3px 12px; letter-spacing:.2px}
+.pill.st-nottested{background:#f1f5f9; color:#94a3b8}
+.pill.st-effective{background:var(--okbg); color:var(--ok)}
+.pill.st-exception{background:var(--warnbg); color:var(--warn)}
+.pill.st-deficient{background:var(--badbg); color:var(--bad)}
+.pill.st-na{background:var(--graybg); color:var(--gray)}
+.ctrl-body{padding:12px 14px; display:grid; grid-template-columns:repeat(auto-fit,minmax(180px,1fr)); gap:10px}
+.ctrl-body .full{grid-column:1/-1}
+.methods{display:flex; gap:6px; flex-wrap:wrap}
+.mchip{border:1.5px solid var(--border); border-radius:99px; padding:4px 12px; font-size:12.5px; cursor:pointer;
+  user-select:none; background:#fff; font-weight:600; color:var(--muted)}
+.mchip.on{background:#e0eaff; border-color:var(--accent); color:var(--accent2)}
+.ctrl-hint{font-size:12px; color:var(--muted); font-style:italic; margin-top:6px}
+/* ---------- findings ---------- */
+.finding{border:1px solid var(--border); border-left:4px solid var(--warnbg); border-radius:10px; background:#fff;
+  margin-bottom:12px; box-shadow:var(--shadow); padding:13px 15px}
+.finding.sev-High{border-left-color:var(--bad)}
+.finding.sev-Medium{border-left-color:var(--warn)}
+.finding.sev-Low{border-left-color:#ca8a04}
+.finding .fhead{display:flex; align-items:center; gap:9px; flex-wrap:wrap; margin-bottom:8px}
+.finding .fhead .fid{font-weight:800; color:var(--navy); font-size:14px}
+.sevtag{font-size:11px; font-weight:800; border-radius:5px; padding:2px 9px; letter-spacing:.4px; text-transform:uppercase}
+.sevtag.sv-High{background:var(--badbg); color:var(--bad)}
+.sevtag.sv-Medium{background:var(--warnbg); color:var(--warn)}
+.sevtag.sv-Low{background:#fef9c3; color:#a16207}
+.finding .grid{gap:8px}
+/* ---------- report preview ---------- */
+.pv{background:#fff; border:1px solid var(--border); border-radius:10px; padding:clamp(18px,4vw,44px); max-width:860px; margin:0 auto;}
+.pv h1{font-size:clamp(20px,4vw,26px); color:var(--navy); margin:0 0 4px}
+.pv h2{font-size:16px; color:var(--navy); margin:26px 0 8px; border-bottom:2px solid var(--navy); padding-bottom:4px}
+.pv h3{font-size:14px; color:var(--navy2); margin:18px 0 6px}
+.pv p{font-size:13.5px; margin:7px 0; color:#27303f}
+.pv .small{font-size:12px; color:var(--muted)}
+.pv .cover-meta{margin:18px 0; border-top:1px solid var(--border); border-bottom:1px solid var(--border); padding:12px 0}
+.pv .cover-meta div{display:flex; gap:12px; font-size:13.5px; padding:2.5px 0}
+.pv .cover-meta .k{flex:0 0 190px; font-weight:700; color:var(--muted)}
+.tbl-wrap{overflow-x:auto; margin:10px 0}
+table.tbl{border-collapse:collapse; width:100%; font-size:12.5px}
+table.tbl th{background:var(--navy2); color:#fff; text-align:left; padding:7px 9px; font-size:11.5px; letter-spacing:.3px; white-space:nowrap}
+table.tbl td{border-bottom:1px solid var(--border); padding:7px 9px; vertical-align:top}
+table.tbl tr:nth-child(even) td{background:#f8fafc}
+.st-effective{color:var(--ok); font-weight:700}
+.st-exception{color:var(--warn); font-weight:700}
+.st-deficient{color:var(--bad); font-weight:700}
+.st-na,.st-nottested{color:var(--muted); font-weight:700}
+.confbox{border:1.5px solid var(--navy); border-radius:8px; padding:10px 14px; font-size:12.5px; color:var(--navy);
+  font-weight:700; letter-spacing:.6px; margin-top:22px; text-align:center}
+.findingblk{margin:12px 0; padding:10px 14px; border:1px solid var(--border); border-radius:8px; background:#fbfcfe}
+.findingblk .fh{font-weight:800; color:var(--navy); margin-bottom:4px; font-size:13.5px}
+.findingblk .fl{font-size:13px; margin:4px 0}
+.findingblk .fl b{color:var(--muted); font-weight:700; margin-right:6px; font-size:12px}
+.report-actions{display:flex; gap:10px; flex-wrap:wrap; align-items:center}
+/* ---------- toast ---------- */
+#toast{position:fixed; bottom:18px; left:50%; transform:translateX(-50%) translateY(20px); background:var(--navy); color:#fff;
+  border-radius:9px; padding:10px 18px; font-size:13.5px; box-shadow:0 8px 24px rgba(0,0,0,.25); opacity:0;
+  pointer-events:none; transition:all .25s; z-index:60; max-width:90vw}
+#toast.show{opacity:1; transform:translateX(-50%) translateY(0)}
+/* ---------- misc ---------- */
+.note{font-size:12.5px; color:var(--muted); background:#f1f5f9; border-radius:8px; padding:9px 13px; margin-top:12px; line-height:1.5}
+.toolbar{display:flex; gap:10px; flex-wrap:wrap; align-items:center; margin-bottom:14px}
+.toolbar input,.toolbar select{border:1px solid var(--border); border-radius:8px; padding:8px 11px; font-size:13.5px; font-family:inherit; background:#fff}
+.toolbar input{flex:1 1 200px}
+.empty{color:var(--muted); text-align:center; padding:34px 10px; font-size:14px}
+footer.pagefoot{max-width:1200px; margin:0 auto; padding:0 16px 26px; color:var(--muted); font-size:11.5px; text-align:center}
+@media (max-width:640px){
+  .card{padding:14px}
+  .top-actions .btn{padding:6px 9px; font-size:12px}
+  .pv .cover-meta .k{flex-basis:130px}
+}
+@media print{
+  .topbar,.tabs,.toolbar,.report-actions,.no-print,footer.pagefoot,#toast{display:none !important}
+  body{background:#fff}
+  main{padding:0; max-width:none}
+  section[hidden]{display:none !important}
+  .card{border:0; box-shadow:none; padding:0}
+  .pv{border:0; max-width:none; padding:0}
+}
+</style>
+</head>
+<body>
+<header class="topbar">
+  <div class="brand"><span class="logo">&#128274;</span> SOC 2 Audit Toolkit</div>
+  <div class="top-actions">
+    <span id="saveState"></span>
+    <button class="btn" id="btnDemo" title="Load a sample audit to explore the tool">Load demo</button>
+    <button class="btn" id="btnNew" title="Start a blank audit">New audit</button>
+    <button class="btn" id="btnExportJson" title="Download this audit as a JSON backup">Backup</button>
+    <label class="btn" for="fileImport" title="Restore a JSON backup">Restore</label>
+    <input type="file" id="fileImport" accept=".json,application/json" hidden>
+  </div>
+</header>
+<nav class="tabs" id="mainTabs">
+  <button data-view="plan" class="active">1 · Audit plan <span class="badge" id="badgePlan">0</span></button>
+  <button data-view="execute">2 · Fieldwork <span class="badge" id="badgeExec">0/0</span></button>
+  <button data-view="findings">3 · Findings <span class="badge" id="badgeFindings">0</span></button>
+  <button data-view="report">4 · Report &amp; export</button>
+</nav>
+<main>
+  <!-- ======================= VIEW 1: PLAN ======================= -->
+  <section id="view-plan">
+    <div class="card">
+      <h2>Engagement details</h2>
+      <p class="sub">Who is being audited, for which system, and over what period. This feeds every generated report.</p>
+      <div class="grid">
+        <div class="field"><label for="inCompany">Company / service organization</label><input id="inCompany" placeholder="e.g. Acme Cloud Services, Inc."></div>
+        <div class="field"><label for="inIndustry">Industry / sector</label><input id="inIndustry" placeholder="e.g. SaaS / cloud hosting"></div>
+        <div class="field span2"><label for="inSystem">System or service in scope (system description)</label>
+          <textarea id="inSystem" placeholder="Describe the system: applications, infrastructure, locations, key processes supporting the service…"></textarea></div>
+        <div class="field"><label for="inEngType">Engagement type</label>
+          <select id="inEngType">
+            <option value="type2">Type II — design &amp; operating effectiveness over a period</option>
+            <option value="type1">Type I — design of controls as of a point in time</option>
+          </select></div>
+        <div class="field"><label for="inPeriodStart">Audit period start</label><input type="date" id="inPeriodStart"></div>
+        <div class="field"><label for="inPeriodEnd">Audit period end</label><input type="date" id="inPeriodEnd"></div>
+        <div class="field"><label for="inAuditor">Auditor / lead tester</label><input id="inAuditor" placeholder="e.g. Jordan Reyes, CISA"></div>
+        <div class="field"><label for="inFirm">Audit firm / team</label><input id="inFirm" placeholder="e.g. Internal Audit — IT Assurance"></div>
+        <div class="field"><label for="inPreparedBy">Prepared by</label><input id="inPreparedBy" placeholder="e.g. Compliance team"></div>
+        <div class="field"><label for="inPlanStart">Planned fieldwork start</label><input type="date" id="inPlanStart"></div>
+        <div class="field"><label for="inPlanEnd">Target fieldwork completion</label><input type="date" id="inPlanEnd"></div>
+      </div>
+    </div>
+    <div class="card">
+      <h2>Trust Services Criteria in scope</h2>
+      <p class="sub">Security (the Common Criteria, CC1–CC9) is required in every SOC 2 examination. Add further categories to extend the scope; the control list below updates automatically.</p>
+      <div class="catgrid" id="catList"></div>
+      <div class="note" id="tscNote"></div>
+    </div>
+    <div class="card">
+      <h2>Controls in scope</h2>
+      <p class="sub">Tick the controls fieldwork will cover. Untick any control that is out of scope (for example, physical access where the service is fully cloud-hosted). Selections here drive the Fieldwork tab and the reports.</p>
+      <div class="searchline"><input id="ctrlSearch" placeholder="Search controls, e.g. access, change, backup…"></div>
+      <div id="planControlTables"></div>
+    </div>
+    <div class="card">
+      <h2>Plan summary</h2>
+      <div class="sumstrip" id="planSummary"></div>
+      <div class="note">Workflow: <b>1</b>&nbsp;complete this plan → <b>2</b>&nbsp;test each in-scope control in Fieldwork → <b>3</b>&nbsp;record findings → <b>4</b>&nbsp;generate the PDF report and Excel workbook. Everything saves automatically in this browser; use <b>Backup</b> to keep a JSON copy.</div>
+    </div>
+  </section>
+  <!-- ======================= VIEW 2: FIELDWORK ======================= -->
+  <section id="view-execute" hidden>
+    <div class="card">
+      <h2>Fieldwork progress</h2>
+      <div class="progress-wrap">
+        <div class="pbar"><div id="execBar"></div></div>
+        <div id="execPct" style="font-weight:800;color:var(--navy)"></div>
+        <div class="status-chips" id="execChips"></div>
+      </div>
+      <div class="catbar" id="execCatBars"></div>
+    </div>
+    <div class="toolbar">
+      <input id="execSearch" placeholder="Search controls…">
+      <select id="execCat"><option value="">All categories</option></select>
+      <select id="execStatus">
+        <option value="">All statuses</option>
+        <option value="nottested">Not tested</option>
+        <option value="effective">Effective</option>
+        <option value="exception">Exception noted</option>
+        <option value="deficient">Deficient</option>
+        <option value="na">Not applicable</option>
+      </select>
+    </div>
+    <div id="execList"></div>
+  </section>
+  <!-- ======================= VIEW 3: FINDINGS ======================= -->
+  <section id="view-findings" hidden>
+    <div class="card">
+      <h2>Findings &amp; remediation</h2>
+      <p class="sub">Every control marked <span class="pill st-exception">exception</span> or <span class="pill st-deficient">deficient</span> should have a finding. Sync pulls them in automatically; you can also add free-form findings.</p>
+      <div style="display:flex;gap:10px;flex-wrap:wrap">
+        <button class="btn btn-primary" id="btnSyncFindings">Sync findings from fieldwork</button>
+        <button class="btn" id="btnAddFinding">+ Add finding manually</button>
+      </div>
+    </div>
+    <div id="findingsList"></div>
+  </section>
+  <!-- ======================= VIEW 4: REPORT ======================= -->
+  <section id="view-report" hidden>
+    <div class="card">
+      <h2>Generate deliverables</h2>
+      <p class="sub">The report reflects the plan (company, period, scoped criteria) and every fieldwork result recorded so far.</p>
+      <div class="grid" style="margin-bottom:14px">
+        <div class="field"><label for="optReportDate">Report date</label><input type="date" id="optReportDate"></div>
+        <div class="field"><label>Report sections</label>
+          <div style="display:flex;flex-direction:column;gap:6px;font-size:13.5px;padding-top:2px">
+            <label style="display:flex;gap:7px;align-items:center"><input type="checkbox" id="optIncludeDetail" checked> Detailed control results</label>
+            <label style="display:flex;gap:7px;align-items:center"><input type="checkbox" id="optIncludeEvidence" checked> Include evidence &amp; notes columns</label>
+          </div></div>
+        <div class="field span2"><label for="optNextSteps">Auditor conclusion / next steps (appended to Section 6)</label>
+          <textarea id="optNextSteps" placeholder="e.g. Recommend remediating F-02 before the next readiness assessment…"></textarea></div>
+      </div>
+      <div class="report-actions">
+        <button class="btn btn-primary" id="btnPdf">&#11015; Download report (PDF)</button>
+        <button class="btn btn-primary" id="btnXlsx">&#11015; Download workbook (Excel .xlsx)</button>
+        <button class="btn" id="btnPrint">&#128424; Print preview</button>
+        <span class="small" style="color:var(--muted);font-size:12px">PDF downloads directly; “Print preview” uses the browser print dialog as a fallback.</span>
+      </div>
+      <div class="note">Only a licensed CPA firm can issue an official SOC 2 attestation. This toolkit produces internal audit / readiness working papers based on the AICPA Trust Services Criteria.</div>
+    </div>
+    <div class="pv" id="reportPreview"></div>
+  </section>
+</main>
+<footer class="pagefoot">SOC 2 Audit Toolkit — static single-file tool · all data stays in your browser · criteria paraphrased from the AICPA Trust Services Criteria</footer>
+<div id="toast"></div>
+
+<script>
+/* ============================================================
+   DATA — SOC 2 Trust Services Criteria control library + demo
+   ============================================================ */
+var TSC_NOTE = 'Criteria focus statements are paraphrased from the AICPA Trust Services Criteria (2017, with revised points of focus) for internal audit and readiness use. Verify wording against the official AICPA publication before issuing any client-facing deliverable.';
+var METHODS = ['Inquiry', 'Inspection', 'Observation', 'Reperformance'];
+var METHOD_ABBR = {Inquiry:'Inq', Inspection:'Insp', Observation:'Obs', Reperformance:'Repr'};
+var STATUSES = [
+  {id:'nottested',  label:'Not tested'},
+  {id:'effective',  label:'Effective — no exceptions'},
+  {id:'exception',  label:'Exception noted'},
+  {id:'deficient',  label:'Deficient — control gap'},
+  {id:'na',         label:'Not applicable'}
+];
+var STATUS_LABEL = {}; STATUSES.forEach(function(s){ STATUS_LABEL[s.id]=s.label; });
+var STATUS_COLOR_UI = {nottested:'#94a3b8', effective:'#15803d', exception:'#b45309', deficient:'#b91c1c', na:'#64748b'};
+var STATUS_COLOR_PDF = {nottested:[0.58,0.64,0.72], effective:[0.08,0.47,0.24], exception:[0.71,0.33,0.04], deficient:[0.73,0.11,0.11], na:[0.39,0.45,0.55]};
+
+var CATS = [
+  {id:'security', name:'Security — Common Criteria', short:'Security', required:true,
+   desc:'CC1–CC9: governance, risk, access, operations, change and vendor risk. Required in every SOC 2.'},
+  {id:'availability', name:'Availability', short:'Availability', required:false,
+   desc:'A1: capacity, environmental protections, redundancy, recovery and backup.'},
+  {id:'processing_integrity', name:'Processing Integrity', short:'Processing integrity', required:false,
+   desc:'PI1: complete, valid, accurate and timely processing of inputs and outputs.'},
+  {id:'confidentiality', name:'Confidentiality', short:'Confidentiality', required:false,
+   desc:'C1: identification, protection and secure disposal of confidential information.'},
+  {id:'privacy', name:'Privacy', short:'Privacy', required:false,
+   desc:'P1–P8: notice & choice, collection, use/retention, access, disclosure, quality, monitoring, governance.'}
+];
+
+var CONTROL_LIB = [
+  /* ---------- CC1 Control environment ---------- */
+  {ref:'CC1.1', cat:'security', title:'Integrity and ethical values', focus:'The entity demonstrates a commitment to integrity and ethical values through a code of conduct, tone at the top and mechanisms to address deviations.', test:'Inspect code of conduct and disciplinary policy; inquire of HR and management; sample signed staff attestations.'},
+  {ref:'CC1.2', cat:'security', title:'Board oversight', focus:'The board of directors or equivalent body provides oversight of the development and performance of internal control.', test:'Review board / committee minutes covering control and risk topics; inquire of governance lead.'},
+  {ref:'CC1.3', cat:'security', title:'Organizational structure and authority', focus:'Management establishes structures, reporting lines, and appropriate authorities and responsibilities in pursuit of objectives.', test:'Inspect current org chart, job descriptions and delegation-of-authority matrix.'},
+  {ref:'CC1.4', cat:'security', title:'Commitment to competence', focus:'The entity attracts, develops and retains competent individuals (hiring practices, training, certifications).', test:'Review hiring and onboarding processes, training curriculum and completion records; sample new hires.'},
+  {ref:'CC1.5', cat:'security', title:'Accountability', focus:'Individuals are held accountable for their internal control responsibilities through performance management.', test:'Review performance review process including security objectives; inspect disciplinary process for deviations.'},
+  /* ---------- CC2 Communication ---------- */
+  {ref:'CC2.1', cat:'security', title:'Internal communication of objectives', focus:'The entity internally communicates information, including objectives and responsibilities for internal control, necessary to support the functioning of internal control.', test:'Inspect how policies and control responsibilities are communicated to staff (intranet, onboarding, briefings).'},
+  {ref:'CC2.2', cat:'security', title:'Internal communication of control issues', focus:'Employees can report suspected control issues or deviations without fear of retribution (hotline, escalation paths).', test:'Inspect reporting channels and whistleblower arrangements; trace handling of sample reported issues.'},
+  {ref:'CC2.3', cat:'security', title:'External communication', focus:'The entity communicates with external parties about the system, its objectives, and their responsibilities, and receives and acts on their feedback.', test:'Review customer-facing documentation, SLAs and the process for receiving/acting on external complaints or queries.'},
+  /* ---------- CC3 Risk assessment ---------- */
+  {ref:'CC3.1', cat:'security', title:'Risk to objectives identified and assessed', focus:'The entity identifies and assesses risks to achieving its objectives and analyzes them as a basis for determining how they should be managed.', test:'Inspect the risk register / risk assessment methodology; verify owners, likelihood-impact rating and treatment.'},
+  {ref:'CC3.2', cat:'security', title:'Fraud risk considered', focus:'The entity considers the potential for fraud in assessing risks to objectives.', test:'Review fraud risk assessment; inquire how fraud scenarios are identified and mitigated.'},
+  {ref:'CC3.3', cat:'security', title:'Responding to significant change', focus:'The entity identifies and assesses significant changes that could impact the system or internal control.', test:'Review change-trigger assessment process and examples (new service lines, reorganizations, migrations).'},
+  /* ---------- CC4 Monitoring ---------- */
+  {ref:'CC4.1', cat:'security', title:'Ongoing and separate evaluations', focus:'The entity conducts ongoing and/or periodic evaluations to ascertain whether internal control components are present and functioning.', test:'Inspect monitoring schedule, control self-assessments, internal audits and monitoring tool outputs.'},
+  {ref:'CC4.2', cat:'security', title:'Deficiencies evaluated and communicated', focus:'Identified deficiencies are evaluated for severity and communicated to responsible parties, senior management and the board as appropriate.', test:'Inspect deficiency log, escalation records and remediation tracking.'},
+  /* ---------- CC5 Control activities ---------- */
+  {ref:'CC5.1', cat:'security', title:'Control activities selected and developed', focus:'The entity selects and develops control activities that contribute to mitigating risks to the achievement of objectives.', test:'Map key risks to documented controls; inspect control documentation and completeness across processes.'},
+  {ref:'CC5.2', cat:'security', title:'General controls over technology', focus:'The entity selects and develops general control activities over technology (infrastructure, software, personnel, data).', test:'Review ITGC documentation covering infrastructure management, software maintenance and data handling.'},
+  /* ---------- CC6 Logical & physical access ---------- */
+  {ref:'CC6.1', cat:'security', title:'Logical access security', focus:'Logical access security measures protect against threats from identification, authentication and authorization of users and their credentials.', test:'Review access control policy; inspect authentication configuration (MFA, password/SSO policy) and access model.'},
+  {ref:'CC6.2', cat:'security', title:'User provisioning and deprovisioning', focus:'The entity registers and deregisters users, and authorizes, modifies and removes access, based on roles, job changes and terminations.', test:'Sample joiners, movers and leavers; inspect approval evidence and timeliness of removal for leavers.'},
+  {ref:'CC6.3', cat:'security', title:'Role-based access and role changes', focus:'The entity manages roles, restricts modifications to roles and periodically reviews roles for appropriateness.', test:'Inspect role definition matrix, sample role changes with approvals, and access review sign-offs.'},
+  {ref:'CC6.4', cat:'security', title:'Physical and network access restrictions', focus:'The entity restricts unauthorized physical access to facilities and unauthorized logical access to networks (badges, locks, segmentation, firewalls).', test:'Inspect facility entry controls, badge logs, network segmentation and firewall rule reviews.'},
+  {ref:'CC6.5', cat:'security', title:'Disposal or repurposing of equipment', focus:'The entity disposes of, or repurposes, equipment securely so that data is not recoverable by unauthorized parties.', test:'Inspect asset disposal log and certificates of destruction / wiping evidence.'},
+  {ref:'CC6.6', cat:'security', title:'Restriction of external access', focus:'The entity restricts external access (vendors, partners, customers) to systems and requires appropriate protections and approvals.', test:'Review third-party access provisioning, remote access controls (VPN, bastion) and monitoring of external sessions.'},
+  {ref:'CC6.7', cat:'security', title:'Transmission, movement and removal of data', focus:'The entity restricts the transmission, movement and removal of data to authorized internal and external users and processes, protecting data in transit and at rest.', test:'Inspect encryption configuration (TLS versions, disk/volume encryption, key management) and data transfer policies.'},
+  {ref:'CC6.8', cat:'security', title:'Unauthorized software prevented', focus:'The entity prevents unauthorized software from being installed or executed on production systems.', test:'Review software inventory, application allow-listing configuration and change control over software installs.'},
+  /* ---------- CC7 System operations ---------- */
+  {ref:'CC7.1', cat:'security', title:'Configuration management', focus:'The entity manages the configuration of infrastructure and software to support the functioning of the system.', test:'Inspect configuration baselines, hardening standards and records of approved configuration changes.'},
+  {ref:'CC7.2', cat:'security', title:'Vulnerability management', focus:'The entity identifies vulnerabilities and remediates them in line with defined service levels.', test:'Review vulnerability scan coverage and reports; sample critical findings and verify patching within SLA.'},
+  {ref:'CC7.3', cat:'security', title:'Detection and monitoring of anomalies', focus:'The entity monitors the system to detect anomalies indicative of control failures or attacks, and evaluates security events.', test:'Inspect logging/monitoring and alerting configuration (SIEM); sample triaged alerts and their resolution.'},
+  {ref:'CC7.4', cat:'security', title:'Incident response', focus:'The entity uses incident detection and response procedures to identify, assess, contain and communicate security incidents.', test:'Inspect the incident response plan; walk through a sample incident from detection to closure.'},
+  {ref:'CC7.5', cat:'security', title:'Recovery activities', focus:'The entity identifies, develops and tests recovery activities (contingency and restoration plans) to resume disrupted operations.', test:'Review recovery plan and runbooks; inspect evidence of recovery component testing.'},
+  /* ---------- CC8 Change management ---------- */
+  {ref:'CC8.1', cat:'security', title:'Change management', focus:'The entity manages changes to infrastructure, software and data throughout the system lifecycle, with authorization, testing and approval before deployment.', test:'Sample changes from the period; inspect ticket, approval, test evidence and deployment records; check segregation of duties.'},
+  /* ---------- CC9 Risk mitigation ---------- */
+  {ref:'CC9.1', cat:'security', title:'Risk mitigation via contracts and insurance', focus:'The entity mitigates risks through appropriate contracts (including flow-down of security obligations) and insurance coverage.', test:'Review insurance policies and key contract clauses with customers and suppliers.'},
+  {ref:'CC9.2', cat:'security', title:'Vendor / supplier risk management', focus:'The entity assesses and monitors the performance and risks of vendors and suppliers that could impact the system.', test:'Sample critical vendors; inspect due diligence, security assessments (e.g., vendor SOC reports) and ongoing monitoring.'},
+  /* ---------- A1 Availability ---------- */
+  {ref:'A1.1', cat:'availability', title:'Capacity management', focus:'The entity maintains, monitors and evaluates current processing and storage capacity to address forecasted demand and availability objectives.', test:'Inspect capacity monitoring, forecasts and scaling mechanisms; compare against availability targets.'},
+  {ref:'A1.2', cat:'availability', title:'Environmental protections, redundancy and failover', focus:'The entity uses environmental protections, software/data redundancy and infrastructure redundancy to meet availability objectives (power, cooling, network, N+1).', test:'Inspect UPS/generator arrangements, redundancy configuration, failover design and monitoring of environmental controls.'},
+  {ref:'A1.3', cat:'availability', title:'Recovery, testing and backup', focus:'The entity implements and tests recovery activities including backup strategy, restoration testing and incident recovery against defined RTO/RPO targets.', test:'Inspect backup configuration and logs; review restoration/DR test results against RTO/RPO targets.'},
+  /* ---------- PI1 Processing integrity ---------- */
+  {ref:'PI1.1', cat:'processing_integrity', title:'Complete and accurate processing', focus:'The entity completes processing of inputs and transactions accurately, completely, on a timely basis, and only for authorized purposes.', test:'Sample processing runs; reconcile input/output counts; inspect validation and balancing controls.'},
+  {ref:'PI1.2', cat:'processing_integrity', title:'Timely processing', focus:'The entity processes inputs within the time period required to meet processing integrity objectives and customer expectations.', test:'Review processing schedules, batch/job logs and SLA reports against timeliness targets.'},
+  {ref:'PI1.3', cat:'processing_integrity', title:'Authorized processing and input validity', focus:'The entity authorizes system processing and inputs, and detects invalid inputs for correction or rejection.', test:'Inspect input validation rules and error handling; sample processing authorizations.'},
+  {ref:'PI1.4', cat:'processing_integrity', title:'Detection and correction of processing errors', focus:'The entity detects and corrects erroneous processing in a complete and timely manner.', test:'Review error queue / exception reports, correction procedures and timeliness of corrections.'},
+  {ref:'PI1.5', cat:'processing_integrity', title:'Complete processing history retained', focus:'The entity retains complete records of inputs, outputs and processing activities, including modifications, to meet objectives.', test:'Inspect audit trails, retention configuration and completeness of processing history.'},
+  /* ---------- C1 Confidentiality ---------- */
+  {ref:'C1.1', cat:'confidentiality', title:'Identification of confidential information', focus:'The entity identifies and designates confidential information and defines how it must be protected, used and retained.', test:'Inspect classification policy and the inventory of confidential information categories and handling requirements.'},
+  {ref:'C1.2', cat:'confidentiality', title:'Protection and secure disposal', focus:'The entity protects confidential information from unauthorized access (NDAs, encryption, restrictions) and disposes of it in accordance with commitments.', test:'Sample handling controls (NDAs, access restrictions, encryption); inspect disposal methods and certificates.'},
+  /* ---------- P series Privacy ---------- */
+  {ref:'P1.1', cat:'privacy', title:'Purposes specified and consent obtained', focus:'The entity discloses the purposes for which personal information is collected and obtains consent prior to collection or a change in purpose.', test:'Inspect the privacy notice; sample consent capture records and change-of-purpose communications.'},
+  {ref:'P1.2', cat:'privacy', title:'Collection choices communicated and honored', focus:'The entity communicates the choices available to individuals regarding collection, use and sharing, and honors those choices.', test:'Review opt-in/opt-out mechanics and preference center; test that recorded preferences are enforced.'},
+  {ref:'P2.1', cat:'privacy', title:'Collection limited to disclosed purposes', focus:'The entity collects personal information only for the purposes identified in the notice and as permitted by law.', test:'Map collected data elements to disclosed purposes at each collection point; sample collection forms and events.'},
+  {ref:'P3.1', cat:'privacy', title:'Use limited to communicated purposes', focus:'The entity limits the use of personal information to the purposes communicated and for which consent was obtained.', test:'Review internal use cases and access queries against stated purposes; sample use approvals.'},
+  {ref:'P3.2', cat:'privacy', title:'Retention limited to defined periods', focus:'The entity retains personal information only as long as needed for the purposes communicated and per the retention schedule.', test:'Inspect the retention schedule and automated deletion/archiving configuration; sample enforcement.'},
+  {ref:'P3.3', cat:'privacy', title:'Secure disposal of personal information', focus:'The entity disposes of personal information securely and in accordance with commitments (media sanitization, certificates).', test:'Inspect disposal processes, sanitization standards and disposal certificates.'},
+  {ref:'P4.1', cat:'privacy', title:'Access to personal information', focus:'The entity grants individuals the ability to access their personal information and responds to access requests within defined timeframes.', test:'Sample data subject access requests end-to-end (receipt, identity verification, response within SLA).'},
+  {ref:'P4.2', cat:'privacy', title:'Correction and updating', focus:'The entity allows individuals to correct, amend or update their personal information and communicates changes to relevant parties.', test:'Sample correction requests and trace how updates propagate to systems and third parties.'},
+  {ref:'P5.1', cat:'privacy', title:'Disclosure to third parties per commitments', focus:'The entity discloses personal information to third parties only in accordance with commitments and with appropriate consent or legal basis.', test:'Review data-sharing agreements and consent basis; sample third-party disclosures against commitments.'},
+  {ref:'P5.2', cat:'privacy', title:'Disclosure for other purposes', focus:'The entity discloses personal information for purposes other than those communicated only with consent or as required by law.', test:'Review practices for secondary use or sale/sharing of data; inspect notifications and consents obtained.'},
+  {ref:'P6.1', cat:'privacy', title:'Quality of personal information', focus:'The entity maintains accurate, up-to-date, complete and relevant personal information for the purposes communicated.', test:'Inspect data quality controls, validation at entry and periodic accuracy reviews.'},
+  {ref:'P6.2', cat:'privacy', title:'Corrections propagated', focus:'The entity updates or corrects personal information from and to third parties with which it has shared the information.', test:'Trace a correction through internal systems and outward to third-party recipients.'},
+  {ref:'P7.1', cat:'privacy', title:'Monitoring and enforcement of privacy practices', focus:'The entity monitors compliance with its privacy practices, handles complaints and issues, and takes corrective action.', test:'Review privacy compliance monitoring, complaint intake and resolution records.'},
+  {ref:'P8.1', cat:'privacy', title:'Accountability and privacy governance', focus:'The entity establishes accountability and governance for its privacy program (roles, policies, training, self-assessment).', test:'Inspect governance documents, privacy roles (e.g., DPO), training records and privacy self-assessments.'}
+];
+
+/* ---------- demo / sample audit ---------- */
+function demoState(){
+  var st = {
+    version: 1,
+    plan: {
+      company:'Acme Cloud Services, Inc.',
+      industry:'SaaS / cloud hosting',
+      system:'The AcmeCore SaaS platform: customer-facing web application, REST API and supporting AWS production infrastructure (multi-region, us-east-1 primary / us-west-2 secondary), including the deployment pipeline and support tooling used to deliver the hosted service.',
+      engType:'type2',
+      periodStart:'2026-01-01', periodEnd:'2026-09-30',
+      auditor:'Jordan Reyes, CISA',
+      firm:'Internal Audit — IT Assurance',
+      preparedBy:'Compliance team',
+      planStart:'2026-10-05', planEnd:'2026-11-14'
+    },
+    scope: { categories:{security:true, availability:true, processing_integrity:false, confidentiality:true, privacy:false}, controls:{} },
+    results: {
+      'CC1.1':{status:'effective', methods:['Inquiry','Inspection'], sample:'30 attestations', evidence:'Code of conduct v4.2 reviewed; signed attestations on file for 28/30 sampled staff; two pending re-issuance tracked by HR.', notes:'', tester:'J. Reyes', date:'2026-10-06'},
+      'CC1.3':{status:'effective', methods:['Inspection'], sample:'Org chart 2026-05', evidence:'Current org chart and delegation-of-authority matrix reviewed; job descriptions present for IT and compliance roles.', notes:'', tester:'J. Reyes', date:'2026-10-06'},
+      'CC2.2':{status:'effective', methods:['Inquiry','Inspection'], sample:'2 reports', evidence:'Anonymous hotline (vendor) quarterly report reviewed; two reports triaged with documented resolution.', notes:'', tester:'A. Whitfield', date:'2026-10-08'},
+      'CC3.1':{status:'effective', methods:['Inspection'], sample:'Risk register', evidence:'Risk register refreshed 2026-08; top 10 risks have owners, ratings and treatment plans; reviewed with leadership.', notes:'', tester:'A. Whitfield', date:'2026-10-08'},
+      'CC4.1':{status:'exception', methods:['Inquiry','Inspection'], sample:'2 quarters', evidence:'Quarterly control self-assessments completed for Q1 2026; Q2 2026 assessment not performed at time of review.', notes:'Q2 self-assessment overdue; management committed to complete it and automate reminders.', tester:'A. Whitfield', date:'2026-10-12'},
+      'CC6.1':{status:'effective', methods:['Inspection','Observation'], sample:'AWS config export', evidence:'MFA enforced for all IAM users; SSO with SAML enforced; password policy meets standard (14+ chars, rotation); console session timeout configured.', notes:'', tester:'J. Reyes', date:'2026-10-14'},
+      'CC6.2':{status:'exception', methods:['Inspection','Reperformance'], sample:'12 joiners / 8 leavers', evidence:'Access approvals present for 11 of 12 joiners; one leaver retained VPN access for 9 days after termination (reperformed check on 2026-09-30 export).', notes:'HR-to-IT termination handoff relies on a manual ticket; recommend automated deprovisioning.', tester:'J. Reyes', date:'2026-10-15'},
+      'CC6.3':{status:'effective', methods:['Inspection'], sample:'RBAC matrix + 2 reviews', evidence:'Role matrix mapped to 6 job roles; quarterly access review sign-offs obtained for Q1 and Q2 2026.', notes:'', tester:'J. Reyes', date:'2026-10-15'},
+      'CC6.4':{status:'effective', methods:['Inspection'], sample:'Firewall rules', evidence:'Firewall rule set reviewed (least-privilege inbound); admin network segmented; badge access to the office server room limited to facilities and 2 admins.', notes:'', tester:'A. Whitfield', date:'2026-10-16'},
+      'CC6.7':{status:'effective', methods:['Inspection'], sample:'Encryption config', evidence:'TLS 1.2+ enforced at the load balancer; EBS volumes encrypted with KMS CMK; S3 bucket policies deny non-TLS requests.', notes:'', tester:'J. Reyes', date:'2026-10-19'},
+      'CC7.2':{status:'effective', methods:['Inspection','Reperformance'], sample:'3 critical findings', evidence:'Weekly authenticated vulnerability scans (Tenable); 3 sampled critical findings patched within the 14-day SLA (7, 9 and 11 days).', notes:'', tester:'A. Whitfield', date:'2026-10-20'},
+      'CC7.4':{status:'effective', methods:['Inquiry','Inspection'], sample:'IR plan + tabletop', evidence:'Incident response plan v3 reviewed; tabletop exercise held 2026-04-22 with minutes and action items; severity matrix and communication templates in place.', notes:'', tester:'A. Whitfield', date:'2026-10-21'},
+      'CC7.5':{status:'effective', methods:['Inspection'], sample:'Backup + restore test', evidence:'Nightly RDS snapshots with 35-day retention; documented restore test 2026-07-11 (RTO 40 min vs 4-hour target).', notes:'', tester:'J. Reyes', date:'2026-10-21'},
+      'CC8.1':{status:'deficient', methods:['Inspection','Reperformance'], sample:'15 changes', evidence:'Approvals present for all 15 sampled changes, but 4 of 15 lacked documented pre-deployment test evidence; all 4 were hotfixes deployed via pipeline bypass.', notes:'Design gap: hotfix path permits bypassing the standard change workflow with no retrospective test record.', tester:'J. Reyes', date:'2026-10-23'},
+      'A1.1':{status:'effective', methods:['Inspection'], sample:'Dashboards + load test', evidence:'CloudWatch capacity dashboards with autoscaling policies; load test report 2026-03 supports current growth forecast.', notes:'', tester:'A. Whitfield', date:'2026-10-27'},
+      'A1.3':{status:'effective', methods:['Inspection','Reperformance'], sample:'DR test 2026-05', evidence:'DR failover to us-west-2 tested 2026-05-18; RTO achieved 52 minutes vs 4-hour target; runbooks updated after test.', notes:'', tester:'A. Whitfield', date:'2026-10-27'},
+      'C1.1':{status:'effective', methods:['Inquiry','Inspection'], sample:'Classification standard', evidence:'Data classification standard designates confidential data categories; inventory maintained by the security team.', notes:'', tester:'J. Reyes', date:'2026-10-28'},
+      'C1.2':{status:'effective', methods:['Inspection'], sample:'NDAs + disposal certs', evidence:'Customer NDA template includes confidentiality and return/destruction clauses; certificate of destruction obtained for 2026-06 decommissioned storage volumes.', notes:'', tester:'J. Reyes', date:'2026-10-28'}
+    },
+    findings: [
+      {id:'F-01', ref:'CC4.1', severity:'Medium', description:'The Q2 2026 control self-assessment was not performed, leaving a gap in the ongoing monitoring cycle for that quarter.', recommendation:'Schedule the assessment with a named owner and calendar commitment; escalate overdue assessments to the risk committee; automate reminders.', mgmtResponse:'Agreed — Compliance will complete the Q2 assessment retroactively and configure automated quarterly reminders.', owner:'L. Chen (Compliance)', targetDate:'2026-12-15', status:'In remediation'},
+      {id:'F-02', ref:'CC6.2', severity:'High', description:'A terminated employee retained VPN access for 9 days after termination. The HR-to-IT handoff depends on a manual ticket, so removal is not always timely.', recommendation:'Trigger deprovisioning automatically from the HRIS; run a daily reconciliation of active accounts against the HR roster; alert on dormant privileged accounts.', mgmtResponse:'Agreed — IT Ops to implement HRIS-triggered (SCIM) deprovisioning by Q1 2027; interim daily reconciliation already in place.', owner:'M. Osei (IT Ops)', targetDate:'2027-01-31', status:'Open'},
+      {id:'F-03', ref:'CC8.1', severity:'High', description:'The hotfix deployment path bypasses the standard change workflow: 4 of 15 sampled changes had approvals but no documented pre-deployment test evidence.', recommendation:'Formalize the hotfix lane with mandatory retrospective test documentation within 24 hours; alert on pipeline-bypass usage; report exceptions to engineering leadership weekly.', mgmtResponse:'Partially agreed — hotfix lane will be formalized with mandatory post-deployment verification; timeline under discussion with engineering leadership.', owner:'S. Patel (Engineering)', targetDate:'2027-02-28', status:'Open'}
+    ],
+    report: { includeDetail:true, includeEvidence:true, nextSteps:'Recommend remediating the CC6.2 deprovisioning gap (F-02) and the CC8.1 hotfix documentation gap (F-03) before the next assessment cycle; re-verify CC4.1 once the Q2 self-assessment is completed.', reportDate:'2026-11-20' }
+  };
+  return st;
+}
+
+
+/* ============================================================
+   XLSX LIB — minimal ZIP (stored entries) + SpreadsheetML writer
+   Pure functions, no DOM. Produces a real .xlsx (Office Open XML).
+   ============================================================ */
+var _crcTable = null;
+function crc32(u8){
+  if(!_crcTable){ _crcTable=new Int32Array(256); for(var n=0;n<256;n++){ var c=n; for(var k=0;k<8;k++){ c=(c&1)?(0xEDB88320^(c>>>1)):(c>>>1); } _crcTable[n]=c; } }
+  var c=0^-1;
+  for(var i=0;i<u8.length;i++){ c=(c>>>8)^_crcTable[(c^u8[i])&0xFF]; }
+  return (c^-1)>>>0;
+}
+function _b16(v){ var a=new Uint8Array(2); a[0]=v&255; a[1]=(v>>>8)&255; return a; }
+function _b32(v){ var a=new Uint8Array(4); a[0]=v&255; a[1]=(v>>>8)&255; a[2]=(v>>>16)&255; a[3]=(v>>>24)&255; return a; }
+function _bs(str){ return new TextEncoder().encode(str); }
+function _pack(list){
+  var len=0; for(var i=0;i<list.length;i++) len+=list[i].length;
+  var out=new Uint8Array(len), off=0;
+  for(var j=0;j<list.length;j++){ out.set(list[j],off); off+=list[j].length; }
+  return out;
+}
+/* files: [{name:string, data:Uint8Array}] -> Uint8Array of a valid ZIP (STORED) */
+function zipStore(files){
+  var parts=[], cd=[], off=0, n=files.length;
+  for(var i=0;i<n;i++){
+    var f=files[i], name=_bs(f.name), data=f.data, crc=crc32(data), sz=data.length;
+    parts.push(_bs('PK\x03\x04'), _b16(20), _b16(0x0800), _b16(0), _b16(0x6000), _b16(0x5C21),
+      _b32(crc), _b32(sz), _b32(sz), _b16(name.length), _b16(0), name, data);
+    cd.push(_bs('PK\x01\x02'), _b16(20), _b16(20), _b16(0x0800), _b16(0), _b16(0x6000), _b16(0x5C21),
+      _b32(crc), _b32(sz), _b32(sz), _b16(name.length), _b16(0), _b16(0), _b16(0), _b16(0), _b32(0), _b32(off), name);
+    off += 30 + name.length + sz;
+  }
+  var cdBytes=_pack(cd);
+  var eocd=_pack([_bs('PK\x05\x06'), _b16(0), _b16(0), _b16(n), _b16(n), _b32(cdBytes.length), _b32(off), _b16(0)]);
+  return _pack([_pack(parts), cdBytes, eocd]);
+}
+function xmlEsc(s){
+  return String(s===null||s===undefined?'':s)
+    .replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;')
+    .replace(/"/g,'&quot;').replace(/'/g,'&apos;')
+    .replace(/[\u0000-\u0008\u000B\u000C\u000E-\u001F]/g,' ');
+}
+function xlsxColName(i){ /* 0-based -> A, B, ... */
+  var s=''; i++;
+  while(i>0){ var m=(i-1)%26; s=String.fromCharCode(65+m)+s; i=Math.floor((i-1)/26); }
+  return s;
+}
+/* style indices: 0 default | 1 header | 2 title | 3 body | 4 bold | 5 italic
+                  6 section | 7 effective | 8 exception | 9 deficient | 10 n/a | 11 center */
+var XLSX_STYLES =
+'<?xml version="1.0" encoding="UTF-8" standalone="yes"?>\n'+
+'<styleSheet xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main">'+
+'<fonts count="5">'+
+'<font><sz val="11"/><name val="Calibri"/></font>'+
+'<font><b/><sz val="11"/><color rgb="FFFFFFFF"/><name val="Calibri"/></font>'+
+'<font><b/><sz val="14"/><color rgb="FF1F3864"/><name val="Calibri"/></font>'+
+'<font><b/><sz val="11"/><color rgb="FF1F3864"/><name val="Calibri"/></font>'+
+'<font><i/><sz val="10"/><color rgb="FF595959"/><name val="Calibri"/></font>'+
+'</fonts>'+
+'<fills count="8">'+
+'<fill><patternFill patternType="none"/></fill>'+
+'<fill><patternFill patternType="gray125"/></fill>'+
+'<fill><patternFill patternType="solid"><fgColor rgb="FF1F3864"/><bgColor indexed="64"/></patternFill></fill>'+
+'<fill><patternFill patternType="solid"><fgColor rgb="FFD9E2F3"/><bgColor indexed="64"/></patternFill></fill>'+
+'<fill><patternFill patternType="solid"><fgColor rgb="FFC6EFCE"/><bgColor indexed="64"/></patternFill></fill>'+
+'<fill><patternFill patternType="solid"><fgColor rgb="FFFFEB9C"/><bgColor indexed="64"/></patternFill></fill>'+
+'<fill><patternFill patternType="solid"><fgColor rgb="FFFFC7CE"/><bgColor indexed="64"/></patternFill></fill>'+
+'<fill><patternFill patternType="solid"><fgColor rgb="FFF2F2F2"/><bgColor indexed="64"/></patternFill></fill>'+
+'</fills>'+
+'<borders count="2">'+
+'<border><left/><right/><top/><bottom/><diagonal/></border>'+
+'<border><left style="thin"><color rgb="FFB0BEC5"/></left><right style="thin"><color rgb="FFB0BEC5"/></right><top style="thin"><color rgb="FFB0BEC5"/></top><bottom style="thin"><color rgb="FFB0BEC5"/></bottom><diagonal/></border>'+
+'</borders>'+
+'<cellStyleXfs count="1"><xf numFmtId="0" fontId="0" fillId="0" borderId="0"/></cellStyleXfs>'+
+'<cellXfs count="12">'+
+'<xf numFmtId="0" fontId="0" fillId="0" borderId="0" xfId="0"/>'+
+'<xf numFmtId="0" fontId="1" fillId="2" borderId="1" xfId="0" applyFont="1" applyFill="1" applyBorder="1" applyAlignment="1"><alignment horizontal="center" vertical="center" wrapText="1"/></xf>'+
+'<xf numFmtId="0" fontId="2" fillId="0" borderId="0" xfId="0" applyFont="1"/>'+
+'<xf numFmtId="0" fontId="0" fillId="0" borderId="1" xfId="0" applyBorder="1" applyAlignment="1"><alignment vertical="top" wrapText="1"/></xf>'+
+'<xf numFmtId="0" fontId="3" fillId="0" borderId="1" xfId="0" applyFont="1" applyBorder="1" applyAlignment="1"><alignment vertical="top" wrapText="1"/></xf>'+
+'<xf numFmtId="0" fontId="4" fillId="0" borderId="1" xfId="0" applyFont="1" applyBorder="1" applyAlignment="1"><alignment vertical="top" wrapText="1"/></xf>'+
+'<xf numFmtId="0" fontId="3" fillId="3" borderId="1" xfId="0" applyFont="1" applyFill="1" applyBorder="1" applyAlignment="1"><alignment vertical="center" wrapText="1"/></xf>'+
+'<xf numFmtId="0" fontId="0" fillId="4" borderId="1" xfId="0" applyFill="1" applyBorder="1" applyAlignment="1"><alignment horizontal="center" vertical="center" wrapText="1"/></xf>'+
+'<xf numFmtId="0" fontId="0" fillId="5" borderId="1" xfId="0" applyFill="1" applyBorder="1" applyAlignment="1"><alignment horizontal="center" vertical="center" wrapText="1"/></xf>'+
+'<xf numFmtId="0" fontId="0" fillId="6" borderId="1" xfId="0" applyFill="1" applyBorder="1" applyAlignment="1"><alignment horizontal="center" vertical="center" wrapText="1"/></xf>'+
+'<xf numFmtId="0" fontId="0" fillId="7" borderId="1" xfId="0" applyFill="1" applyBorder="1" applyAlignment="1"><alignment horizontal="center" vertical="center" wrapText="1"/></xf>'+
+'<xf numFmtId="0" fontId="0" fillId="0" borderId="1" xfId="0" applyBorder="1" applyAlignment="1"><alignment horizontal="center" vertical="center"/></xf>'+
+'</cellXfs>'+
+'<cellStyles count="1"><cellStyle name="Normal" xfId="0" builtinId="0"/></cellStyles>'+
+'</styleSheet>';
+
+/* sheet = {name, cols:[width,...], freeze:bool, rows:[[cell,...]]}
+   cell: string | number | {v, s(styleIdx), t:'n'} — strings render as inlineStr */
+function xlsxSheetXml(sh){
+  var cols='';
+  if(sh.cols && sh.cols.length){
+    cols='<cols>';
+    sh.cols.forEach(function(w,i){ cols+='<col min="'+(i+1)+'" max="'+(i+1)+'" width="'+w+'" customWidth="1"/>'; });
+    cols+='</cols>';
+  }
+  var pane=sh.freeze?'<pane ySplit="1" topLeftCell="A2" activePane="bottomLeft" state="frozen"/>':'';
+  var xml='<?xml version="1.0" encoding="UTF-8" standalone="yes"?>\n'+
+    '<worksheet xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main">'+
+    '<sheetViews><sheetView workbookViewId="0">'+pane+'</sheetView></sheetViews>'+cols+'<sheetData>';
+  sh.rows.forEach(function(row,ri){
+    xml+='<row r="'+(ri+1)+'">';
+    row.forEach(function(cell,ci){
+      if(cell===null||cell===undefined||cell==='') return;
+      var ref=xlsxColName(ci)+(ri+1);
+      var s=(cell&&typeof cell==='object'&&cell.s!==undefined)?cell.s:0;
+      if(typeof cell==='object'&&cell.t==='n'){
+        xml+='<c r="'+ref+'"'+(s?' s="'+s+'"':'')+'><v>'+cell.v+'</v></c>';
+      } else {
+        var v=(typeof cell==='object')?cell.v:cell;
+        xml+='<c r="'+ref+'"'+(s?' s="'+s+'"':'')+' t="inlineStr"><is><t xml:space="preserve">'+xmlEsc(v)+'</t></is></c>';
+      }
+    });
+    xml+='</row>';
+  });
+  xml+='</sheetData></worksheet>';
+  return xml;
+}
+function makeXlsx(sheets){
+  var ct='<?xml version="1.0" encoding="UTF-8" standalone="yes"?>\n'+
+    '<Types xmlns="http://schemas.openxmlformats.org/package/2006/content-types">'+
+    '<Default Extension="rels" ContentType="application/vnd.openxmlformats-package.relationships+xml"/>'+
+    '<Default Extension="xml" ContentType="application/xml"/>'+
+    '<Override PartName="/xl/workbook.xml" ContentType="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet.main+xml"/>'+
+    '<Override PartName="/xl/styles.xml" ContentType="application/vnd.openxmlformats-officedocument.spreadsheetml.styles+xml"/>';
+  sheets.forEach(function(s,i){ ct+='<Override PartName="/xl/worksheets/sheet'+(i+1)+'.xml" ContentType="application/vnd.openxmlformats-officedocument.spreadsheetml.worksheet+xml"/>'; });
+  ct+='</Types>';
+  var rels='<?xml version="1.0" encoding="UTF-8" standalone="yes"?>\n'+
+    '<Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships">'+
+    '<Relationship Id="rId1" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/officeDocument" Target="xl/workbook.xml"/>'+
+    '</Relationships>';
+  var wb='<?xml version="1.0" encoding="UTF-8" standalone="yes"?>\n'+
+    '<workbook xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main" xmlns:r="http://schemas.openxmlformats.org/officeDocument/2006/relationships"><sheets>';
+  sheets.forEach(function(s,i){ wb+='<sheet name="'+xmlEsc(s.name)+'" sheetId="'+(i+1)+'" r:id="rId'+(i+1)+'"/>'; });
+  wb+='</sheets></workbook>';
+  var wbr='<?xml version="1.0" encoding="UTF-8" standalone="yes"?>\n'+
+    '<Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships">';
+  sheets.forEach(function(s,i){ wbr+='<Relationship Id="rId'+(i+1)+'" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/worksheet" Target="worksheets/sheet'+(i+1)+'.xml"/>'; });
+  wbr+='<Relationship Id="rId'+(sheets.length+1)+'" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/styles" Target="styles.xml"/></Relationships>';
+  var files=[
+    {name:'[Content_Types].xml', data:_bs(ct)},
+    {name:'_rels/.rels', data:_bs(rels)},
+    {name:'xl/workbook.xml', data:_bs(wb)},
+    {name:'xl/_rels/workbook.xml.rels', data:_bs(wbr)},
+    {name:'xl/styles.xml', data:_bs(XLSX_STYLES)}
+  ];
+  sheets.forEach(function(s,i){ files.push({name:'xl/worksheets/sheet'+(i+1)+'.xml', data:_bs(xlsxSheetXml(s))}); });
+  return zipStore(files);
+}
+
+
+/* ============================================================
+   PDF LIB — minimal PDF 1.4 writer using core Type1 fonts
+   (Helvetica / Helvetica-Bold / Helvetica-Oblique, WinAnsi).
+   Pure functions, no DOM. Coordinates: y measured from TOP.
+   ============================================================ */
+var PDF_HELV_W=[278,278,355,556,556,889,667,191,333,333,389,584,278,333,278,278,556,556,556,556,556,556,556,556,556,556,278,278,584,584,584,556,1015,667,667,722,722,667,611,778,722,278,500,667,556,833,722,778,667,778,722,667,611,722,667,944,667,667,611,278,278,278,469,556,333,556,556,500,556,556,278,556,556,222,222,500,222,833,556,556,556,556,333,500,278,556,500,722,500,500,500,334,260,334,584];
+var PDF_HELVB_W=[278,333,474,556,556,889,722,238,333,333,389,584,278,333,278,278,556,556,556,556,556,556,556,556,556,556,333,333,584,584,584,611,975,722,722,722,722,667,611,778,722,278,556,722,611,833,722,778,667,778,722,667,611,722,667,944,667,667,611,333,278,333,584,556,333,556,611,556,611,556,333,611,611,278,278,556,278,889,611,611,611,611,389,556,333,611,556,778,556,556,500,389,280,389,584];
+var PDF_FONTS={
+  F1:{base:'Helvetica',       widths:PDF_HELV_W},
+  F2:{base:'Helvetica-Bold',  widths:PDF_HELVB_W},
+  F3:{base:'Helvetica-Oblique',widths:PDF_HELV_W}
+};
+var CP1252_MAP={'\u20AC':128,'\u201A':130,'\u0192':131,'\u201E':132,'\u2026':133,'\u2020':134,'\u2021':135,'\u02C6':136,'\u2030':137,'\u0160':138,'\u2039':139,'\u0152':140,'\u017D':142,'\u2018':145,'\u2019':146,'\u201C':147,'\u201D':148,'\u2022':149,'\u2013':150,'\u2014':151,'\u02DC':152,'\u2122':153,'\u0161':154,'\u203A':155,'\u0153':156,'\u017E':158,'\u0178':159};
+function pdfStr(s){
+  var out='';
+  for(var i=0;i<s.length;i++){
+    var ch=s.charAt(i), c=s.charCodeAt(i);
+    if(c>=32&&c<=126){
+      if(c===92||c===40||c===41) out+='\\'+ch; else out+=ch;
+      continue;
+    }
+    if(ch==='\n'||ch==='\r'||c===9){ out+=' '; continue; }
+    if(CP1252_MAP[ch]!==undefined){ out+=String.fromCharCode(CP1252_MAP[ch]); continue; }
+    if(c>=160&&c<=255){ out+=String.fromCharCode(c); continue; }
+    out+='?';
+  }
+  return out;
+}
+function pdfBytes(str){
+  var u=new Uint8Array(str.length);
+  for(var i=0;i<str.length;i++){ var c=str.charCodeAt(i); u[i]=(c<256)?c:63; }
+  return u;
+}
+function _p10(n){ var s=String(n); while(s.length<10) s='0'+s; return s; }
+
+function PDFDoc(opts){
+  opts=opts||{};
+  this.pw=612; this.ph=792;
+  this.margin=(opts.margin!==undefined)?opts.margin:56;
+  this.pages=[]; this.cur=null; this.y=0;
+  this._fill=[0,0,0]; this._stroke=[0,0,0]; this._lw=0;
+}
+PDFDoc.prototype.newPage=function(){ this.cur={ops:[]}; this.pages.push(this.cur); this.y=this.margin; };
+PDFDoc.prototype._op=function(s){ this.cur.ops.push(s); };
+PDFDoc.prototype._f2=function(n){ return String(Math.round(n*100)/100); };
+PDFDoc.prototype._f3=function(n){ return String(Math.round(n*1000)/1000); };
+PDFDoc.prototype.setFill=function(c){
+  if(c&&c.join()===this._fill.join()) return;
+  this._fill=c.slice();
+  this._op(this._f3(c[0])+' '+this._f3(c[1])+' '+this._f3(c[2])+' rg');
+};
+PDFDoc.prototype.setStroke=function(c,w){
+  if(w!==undefined&&w!==this._lw){ this._lw=w; this._op(this._f2(w)+' w'); }
+  if(c&&c.join()===this._stroke.join()) return;
+  this._stroke=c.slice();
+  this._op(this._f3(c[0])+' '+this._f3(c[1])+' '+this._f3(c[2])+' RG');
+};
+PDFDoc.prototype.txtWidth=function(str,size,font){
+  var w=PDF_FONTS[font||'F1'].widths, t=0;
+  for(var i=0;i<str.length;i++){
+    var c=str.charCodeAt(i);
+    t+=(c>=32&&c<=126)?w[c-32]:500;
+  }
+  return t*size/1000;
+};
+PDFDoc.prototype.wrap=function(text,size,font,maxW){
+  var words=String(text).split(/\s+/).filter(Boolean);
+  var lines=[], cur='';
+  for(var i=0;i<words.length;i++){
+    var w=words[i], t=cur?cur+' '+w:w;
+    if(this.txtWidth(t,size,font)<=maxW){ cur=t; continue; }
+    if(cur){ lines.push(cur); cur=''; }
+    if(this.txtWidth(w,size,font)>maxW){
+      var seg='';
+      for(var j=0;j<w.length;j++){
+        var t2=seg+w.charAt(j);
+        if(seg&&this.txtWidth(t2,size,font)>maxW){ lines.push(seg); seg=w.charAt(j); } else seg=t2;
+      }
+      cur=seg;
+    } else cur=w;
+  }
+  if(cur) lines.push(cur);
+  return lines.length?lines:[''];
+};
+PDFDoc.prototype.text=function(str,o){
+  o=o||{};
+  var size=o.size||10, font=o.font||'F1', color=o.color||[0,0,0];
+  var strW=this.txtWidth(String(str),size,font);
+  var x=o.x;
+  if(o.align==='center') x=x-strW/2;
+  else if(o.align==='right') x=x-strW;
+  this.setFill(color);
+  this._op('BT /'+font+' '+size+' Tf '+this._f2(x)+' '+this._f2(this.ph-o.y)+' Td ('+pdfStr(String(str))+') Tj ET');
+};
+PDFDoc.prototype.fillRect=function(x,yTop,w,h,color){
+  this.setFill(color);
+  this._op(this._f2(x)+' '+this._f2(this.ph-yTop-h)+' '+this._f2(w)+' '+this._f2(h)+' re f');
+};
+PDFDoc.prototype.line=function(x1,yTop1,x2,yTop2,w,color){
+  this.setStroke(color,w);
+  this._op(this._f2(x1)+' '+this._f2(this.ph-yTop1)+' m '+this._f2(x2)+' '+this._f2(this.ph-yTop2)+' l S');
+};
+PDFDoc.prototype.build=function(footerFn){
+  if(!this.pages.length) this.newPage();
+  if(footerFn){
+    var saved=this.cur;
+    for(var i=0;i<this.pages.length;i++){ this.cur=this.pages[i]; footerFn(this,i+1,this.pages.length); }
+    this.cur=saved;
+  }
+  var n=this.pages.length, kids=[];
+  for(var i=0;i<n;i++) kids.push((7+i*2)+' 0 R');
+  var objs=[];
+  objs.push('<< /Type /Catalog /Pages 2 0 R >>');
+  objs.push('<< /Type /Pages /Kids ['+kids.join(' ')+'] /Count '+n+' >>');
+  objs.push('<< /Type /Font /Subtype /Type1 /BaseFont /Helvetica /Encoding /WinAnsiEncoding >>');
+  objs.push('<< /Type /Font /Subtype /Type1 /BaseFont /Helvetica-Bold /Encoding /WinAnsiEncoding >>');
+  objs.push('<< /Type /Font /Subtype /Type1 /BaseFont /Helvetica-Oblique /Encoding /WinAnsiEncoding >>');
+  objs.push('<< /Title (SOC 2 Audit Report) /Producer (SOC 2 Audit Toolkit) >>');
+  for(var i=0;i<n;i++){
+    var stream=this.pages[i].ops.join('\n');
+    objs.push('<< /Type /Page /Parent 2 0 R /MediaBox [0 0 612 792] /Resources << /Font << /F1 3 0 R /F2 4 0 R /F3 5 0 R >> >> /Contents '+(8+i*2)+' 0 R >>');
+    objs.push('<< /Length '+stream.length+' >>\nstream\n'+stream+'\nendstream');
+  }
+  var head='%PDF-1.4\n%\u00E2\u00E3\u00CF\u00D3\n';
+  var chunks=[head], pos=head.length, offsets=[];
+  for(var i=0;i<objs.length;i++){
+    var s=(i+1)+' 0 obj\n'+objs[i]+'\nendobj\n';
+    offsets.push(pos); chunks.push(s); pos+=s.length;
+  }
+  var xrefPos=pos;
+  var xr='xref\n0 '+(objs.length+1)+'\n0000000000 65535 f \n';
+  for(var i=0;i<offsets.length;i++) xr+=_p10(offsets[i])+' 00000 n \n';
+  xr+='trailer\n<< /Size '+(objs.length+1)+' /Root 1 0 R /Info 6 0 R >>\nstartxref\n'+xrefPos+'\n%%EOF';
+  chunks.push(xr);
+  return pdfBytes(chunks.join(''));
+};
+
+/* FlowDoc: page-flow helpers on top of PDFDoc */
+function FlowDoc(doc){
+  this.d=doc;
+  this.left=doc.margin; this.right=doc.pw-doc.margin;
+  this.bottom=doc.ph-52; /* reserve footer strip */
+  doc.newPage();
+}
+FlowDoc.prototype.need=function(h){ if(this.d.y+h>this.bottom) this.d.newPage(); };
+FlowDoc.prototype.para=function(text,o){
+  o=o||{};
+  var size=o.size||9.5, font=o.font||'F1', color=o.color||[0.13,0.16,0.22];
+  var lead=(o.leading||1.42)*size, indent=o.indent||0;
+  var lines=this.d.wrap(text,size,font,(this.right-this.left)-indent);
+  for(var i=0;i<lines.length;i++){
+    this.need(lead);
+    this.d.text(lines[i],{x:this.left+indent,y:this.d.y+size*0.85,size:size,font:font,color:color,align:o.align});
+    this.d.y+=lead;
+  }
+  this.d.y+=(o.spaceAfter!==undefined?o.spaceAfter:5);
+};
+FlowDoc.prototype.heading=function(numText,title){
+  this.need(64);
+  this.d.text(numText+'  '+title,{x:this.left,y:this.d.y+11,size:12.5,font:'F2',color:[0.086,0.196,0.31]});
+  this.d.line(this.left,this.d.y+17,this.right,this.d.y+17,0.8,[0.72,0.78,0.86]);
+  this.d.y+=24;
+};
+FlowDoc.prototype.subheading=function(text){
+  this.need(38);
+  this.d.text(text,{x:this.left,y:this.d.y+9,size:10.5,font:'F2',color:[0.13,0.23,0.38]});
+  this.d.y+=16;
+};
+/* table: {cols:[{w,label,align}], rows:[[cell,...]], fontSize, header:bool,
+   cell: string | {lines:[{text,bold,size,color}], color, fill} | {text,bold,size,color,fill} } */
+FlowDoc.prototype.table=function(o){
+  var fs=o.fontSize||8, pad=(o.pad!==undefined)?o.pad:4;
+  var cols=o.cols, width=this.right-this.left;
+  var specW=0; cols.forEach(function(c){ specW+=c.w; });
+  var xs=[this.left];
+  cols.forEach(function(c){ xs.push(xs[xs.length-1]+c.w* width/specW); });
+  var lineH=fs*1.34, headerH=lineH+pad*2;
+  var self=this;
+  function cellLines(cell,colW){
+    var items=[];
+    if(typeof cell==='string') items=[{text:cell}];
+    else if(cell&&cell.lines) items=cell.lines.slice();
+    else items=[cell];
+    var out=[];
+    for(var i=0;i<items.length;i++){
+      var it=items[i]||{};
+      var txt=String(it.text!==undefined?it.text:'');
+      var f=it.bold?'F2':(it.italic?'F3':'F1'), sz=it.size||fs;
+      var wrapped=self.d.wrap(txt,sz,f,colW-pad*2);
+      for(var k=0;k<wrapped.length;k++) out.push({text:wrapped[k],font:f,size:sz,color:it.color});
+    }
+    if(out.length>16){ out=out.slice(0,16); out[15].text+='…'; }
+    return out;
+  }
+  function drawHeader(){
+    self.d.fillRect(self.left,self.d.y,width,headerH,[0.086,0.196,0.31]);
+    for(var i=0;i<cols.length;i++){
+      var lbl=String(cols[i].label);
+      self.d.text(lbl,{x:xs[i]+pad,y:self.d.y+pad+fs*0.72,size:fs,font:'F2',color:[1,1,1]});
+    }
+    self.d.y+=headerH;
+  }
+  var headerNeeded=o.header!==false;
+  if(headerNeeded){
+    this.need(headerH+lineH*2.4);
+    drawHeader();
+  }
+  (o.rows||[]).forEach(function(row){
+    var cells=[], maxLines=1;
+    for(var i=0;i<cols.length;i++){
+      var cl=cellLines(row[i],xs[i+1]-xs[i]);
+      cells.push(cl); if(cl.length>maxLines) maxLines=cl.length;
+    }
+    var rowH=maxLines*lineH+pad*2;
+    if(self.d.y+rowH>self.bottom){
+      self.d.newPage();
+      if(headerNeeded) drawHeader();
+    }
+    var rowTop=self.d.y;
+    for(var i=0;i<cols.length;i++){
+      var cl=cells[i], fill=null, col0=null;
+      var raw=row[i];
+      if(raw&&typeof raw==='object'){ fill=raw.fill; col0=raw.color; }
+      if(fill) self.d.fillRect(xs[i],rowTop,xs[i+1]-xs[i],rowH,fill);
+      for(var k=0;k<cl.length;k++){
+        var yb=rowTop+pad+k*lineH+cl[k].size*0.85;
+        var align=cols[i].align;
+        var ax=xs[i]+pad;
+        if(align==='center') ax=xs[i]+(xs[i+1]-xs[i])/2;
+        if(align==='right') ax=xs[i+1]-pad;
+        self.d.text(cl[k].text,{x:ax,y:yb,size:cl[k].size,font:cl[k].font,color:cl[k].color||col0||[0.13,0.16,0.22],align:align});
+      }
+    }
+    self.d.y=rowTop+rowH;
+    self.d.setStroke([0.78,0.82,0.88],0.5);
+    self.d.line(self.left,self.d.y,self.right,self.d.y,0.5,[0.78,0.82,0.88]);
+    for(var k=1;k<cols.length;k++)
+      self.d.line(xs[k],rowTop,xs[k],self.d.y,0.5,[0.86,0.89,0.93]);
+    if(headerNeeded){
+      self.d.line(self.left,rowTop-headerH,self.right,rowTop-headerH,0.8,[0.086,0.196,0.31]);
+    }
+  });
+  if(headerNeeded){
+    /* header underline already drawn per row; ensure separation from body end */
+  }
+  this.d.y+=6;
+};
+
+
+/* ============================================================
+   REPORT LAYER — assembles plan+fieldwork state into:
+   collectReportData(state)  -> shared report model
+   buildWorkbook(state)      -> Uint8Array (.xlsx, 4 sheets)
+   buildReportPdf(state)     -> Uint8Array (.pdf, formal report)
+   buildReportPreviewHtml(state) -> HTML string for on-screen preview
+   Pure functions, no DOM.
+   ============================================================ */
+function escHtml(s){
+  return String(s===null||s===undefined?'':s)
+    .replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+}
+function fmtDate(d){
+  if(!d) return '—';
+  var p=String(d).split('-'); if(p.length!==3) return String(d);
+  var M=['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+  var m=parseInt(p[1],10), day=parseInt(p[2],10);
+  if(!m||!day) return String(d);
+  return day+' '+M[m-1]+' '+p[0];
+}
+function controlsForCat(cat){ return CONTROL_LIB.filter(function(c){ return c.cat===cat; }); }
+function statsFor(state,refs){
+  var s={inScope:refs.length,tested:0,effective:0,exception:0,deficient:0,na:0,nottested:0};
+  refs.forEach(function(ref){
+    var r=state.results[ref]; var st=(r&&r.status)?r.status:'nottested';
+    if(st==='effective') s.effective++;
+    else if(st==='exception') s.exception++;
+    else if(st==='deficient') s.deficient++;
+    else if(st==='na') s.na++;
+    if(st!=='nottested'&&st!=='na') s.tested++;
+    if(st==='nottested') s.nottested++;
+  });
+  return s;
+}
+function readinessPct(s){ return (s.inScope-s.na)>0 ? Math.round(s.effective*100/(s.inScope-s.na)) : null; }
+
+function collectReportData(state){
+  var plan=state.plan||{}, rep=state.report||{};
+  var isType1 = plan.engType==='type1';
+  var ctlByRef={}; CONTROL_LIB.forEach(function(c){ ctlByRef[c.ref]=c; });
+  var cats=[];
+  CATS.forEach(function(cat){
+    if(!state.scope.categories[cat.id]) return;
+    var ctls=controlsForCat(cat.id).filter(function(c){ return state.scope.controls[c.ref]!==false; });
+    var rows=ctls.map(function(c){
+      var r=state.results[c.ref]||{};
+      return {ref:c.ref,title:c.title,focus:c.focus,
+        status:r.status||'nottested', statusLabel:STATUS_LABEL[r.status||'nottested'],
+        methods:(r.methods&&r.methods.length)?r.methods.join(', '):'',
+        sample:r.sample||'', evidence:r.evidence||'', notes:r.notes||'',
+        tester:r.tester||'', date:r.date||''};
+    });
+    var st=statsFor(state,ctls.map(function(c){ return c.ref; }));
+    st.readiness=readinessPct(st);
+    cats.push({id:cat.id,name:cat.name,short:cat.short,controls:rows,stats:st});
+  });
+  var allRefs=[]; cats.forEach(function(c){ c.controls.forEach(function(r){ allRefs.push(r.ref); }); });
+  var overall=statsFor(state,allRefs); overall.readiness=readinessPct(overall);
+
+  var sevOrder={High:0,Medium:1,Low:2};
+  var findings=(state.findings||[]).slice().sort(function(a,b){
+    var sa=sevOrder[a.severity]; if(sa===undefined) sa=3;
+    var sb=sevOrder[b.severity]; if(sb===undefined) sb=3;
+    return (sa-sb)||String(a.id).localeCompare(String(b.id));
+  }).map(function(f){
+    var c=ctlByRef[f.ref]||{};
+    var o={}; for(var k in f) o[k]=f[k];
+    o.controlTitle=c.title||''; return o;
+  });
+  var highCount=findings.filter(function(f){ return f.severity==='High'; }).length;
+
+  var periodText=(plan.periodStart?fmtDate(plan.periodStart):'—')+' \u2013 '+(plan.periodEnd?fmtDate(plan.periodEnd):'—');
+  var plannedText=(plan.planStart?fmtDate(plan.planStart):'—')+' \u2013 '+(plan.planEnd?fmtDate(plan.planEnd):'—');
+  var scopeCatNames=cats.map(function(c){ return c.short; }).join(', ')||'—';
+  var typeLabel=isType1
+    ? 'Type I \u2014 report on the design of controls as of a point in time'
+    : 'Type II \u2014 report on the design and operating effectiveness of controls throughout the period';
+
+  var p1='This report presents the results of the SOC 2 '+(isType1?'design (Type I)':'design and operating effectiveness (Type II)')
+    +' assessment of '+(plan.company||'the service organization')+' covering controls relevant to '+scopeCatNames
+    +'. The assessment was performed against the AICPA Trust Services Criteria'
+    +(isType1?(' as of '+(plan.periodEnd?fmtDate(plan.periodEnd):'the period end')):(' for the period '+periodText))+'.';
+
+  var frag=[overall.effective+' operating effectively'];
+  if(overall.exception) frag.push(overall.exception+' with exceptions noted');
+  if(overall.deficient) frag.push(overall.deficient+' identified as deficient');
+  var p2='Of the '+overall.inScope+' controls in scope, '+overall.tested+' have been tested to date: '+frag.join(', ')+'.';
+  var tail=[];
+  if(overall.na) tail.push(overall.na+' assessed as not applicable');
+  if(overall.nottested) tail.push(overall.nottested+' not yet tested');
+  if(tail.length) p2+=' In addition, '+tail.join(' and ')+'.';
+  if(findings.length) p2+=' '+findings.length+' finding(s) have been raised, of which '+highCount+' are rated High.';
+  else p2+=' No findings have been raised to date.';
+
+  var verdict;
+  if(overall.nottested>0) verdict='The assessment is in progress: '+overall.nottested+' in-scope control(s) remain untested. This report should be regarded as an interim status report until fieldwork is complete.';
+  else if(overall.deficient>0) verdict='Based on the work performed, '+overall.deficient+' control(s) were found deficient and require remediation. Findings and recommended actions are detailed in Section 5.';
+  else if(overall.exception>0) verdict='Controls were generally effective across the scoped criteria; '+overall.exception+' exception(s) were noted and are tracked to remediation in Section 5.';
+  else verdict='All controls tested were effective, with no exceptions noted.';
+
+  var methodsUsed={};
+  allRefs.forEach(function(ref){ var r=state.results[ref]; if(r&&r.methods) r.methods.forEach(function(m){ methodsUsed[m]=1; }); });
+  var methodsList=Object.keys(methodsUsed).join(', ');
+
+  var meta={company:plan.company||'',industry:plan.industry||'',system:plan.system||'',
+    engType:plan.engType||'type2',typeLabel:typeLabel,periodText:periodText,
+    periodStart:plan.periodStart||'',periodEnd:plan.periodEnd||'',
+    auditor:plan.auditor||'',firm:plan.firm||'',preparedBy:plan.preparedBy||'',
+    plannedText:plannedText,scopeCatNames:scopeCatNames,reportDate:rep.reportDate||'',
+    includeDetail:rep.includeDetail!==false,includeEvidence:rep.includeEvidence!==false,
+    nextSteps:rep.nextSteps||''};
+
+  return {meta:meta,cats:cats,overall:overall,findings:findings,highCount:highCount,
+    execSummary:[p1,p2],verdict:verdict,
+    methodsList:methodsList||'Inquiry, Inspection, Observation, Reperformance (as applicable)'};
+}
+
+/* ---------------- Excel workbook ---------------- */
+function buildWorkbook(state){
+  var data=collectReportData(state);
+  var m=data.meta, stX={effective:7,exception:8,deficient:9,na:10,nottested:11};
+  var sevX={High:9,Medium:8,Low:7};
+
+  var planRows=[
+    [{v:'SOC 2 Audit Plan \u2014 '+m.company, s:2}],
+    [],
+    [{v:'Company / service organization', s:4},{v:m.company, s:3}],
+    [{v:'Industry / sector', s:4},{v:m.industry, s:3}],
+    [{v:'System in scope', s:4},{v:m.system, s:3}],
+    [{v:'Engagement type', s:4},{v:m.typeLabel, s:3}],
+    [{v:'Audit period', s:4},{v:m.periodText, s:3}],
+    [{v:'Auditor / lead tester', s:4},{v:m.auditor, s:3}],
+    [{v:'Audit firm / team', s:4},{v:m.firm, s:3}],
+    [{v:'Prepared by', s:4},{v:m.preparedBy, s:3}],
+    [{v:'Planned fieldwork', s:4},{v:m.plannedText, s:3}],
+    [{v:'Criteria in scope', s:4},{v:m.scopeCatNames, s:3}],
+    [{v:'Controls in scope', s:4},{v:data.overall.inScope, s:11, t:'n'}],
+    [{v:'Report date', s:4},{v:m.reportDate, s:3}],
+    [],
+    [{v:'Criteria focus statements are paraphrased from the AICPA Trust Services Criteria (2017, with revised points of focus) for internal audit and readiness use. Verify wording against the official AICPA publication before issuing any client-facing deliverable.', s:5}]
+  ];
+
+  var resRows=[['Ref','Category','Control title','Criteria focus','Status','Test methods','Sample','Evidence obtained','Notes / exceptions','Tester','Test date'].map(function(h){return {v:h,s:1};})];
+  data.cats.forEach(function(cat){
+    cat.controls.forEach(function(c){
+      resRows.push([c.ref, cat.short, c.title, c.focus,
+        {v:c.statusLabel, s:stX[c.status]||0},
+        c.methods, c.sample, c.evidence, c.notes, c.tester, c.date]);
+    });
+  });
+
+  var finRows=[['Finding ID','Control ref','Control title','Severity','Finding status','Description','Recommendation','Management response','Owner','Target date'].map(function(h){return {v:h,s:1};})];
+  data.findings.forEach(function(f){
+    finRows.push([f.id, f.ref, f.controlTitle, {v:f.severity, s:sevX[f.severity]||0}, f.status||'Open',
+      f.description, f.recommendation, f.mgmtResponse, f.owner, f.targetDate]);
+  });
+
+  var sumRows=[
+    [{v:'SOC 2 Audit Summary \u2014 '+m.company, s:2}],
+    [],
+    [{v:'Engagement', s:4},{v:m.typeLabel, s:3}],
+    [{v:'Audit period', s:4},{v:m.periodText, s:3}],
+    [{v:'Criteria in scope', s:4},{v:m.scopeCatNames, s:3}],
+    [],
+    [{v:'Overall status', s:6}],
+    [{v:'Controls in scope', s:4},{v:data.overall.inScope, s:11, t:'n'}],
+    [{v:'Tested', s:4},{v:data.overall.tested, s:11, t:'n'}],
+    [{v:'Effective', s:4},{v:data.overall.effective, s:11, t:'n'}],
+    [{v:'Exceptions noted', s:4},{v:data.overall.exception, s:11, t:'n'}],
+    [{v:'Deficient', s:4},{v:data.overall.deficient, s:11, t:'n'}],
+    [{v:'Not applicable', s:4},{v:data.overall.na, s:11, t:'n'}],
+    [{v:'Not yet tested', s:4},{v:data.overall.nottested, s:11, t:'n'}],
+    [{v:'Readiness (effective / testable, %)', s:4},{v:data.overall.readiness===null?'—':data.overall.readiness, s:11, t:'n'}],
+    [],
+    [{v:'Results by category', s:6}],
+    ['Category','In scope','Tested','Effective','Exceptions','Deficient','N/A','Readiness %'].map(function(h){return {v:h,s:1};})
+  ];
+  data.cats.forEach(function(c){
+    var s=c.stats;
+    sumRows.push([c.name, {v:s.inScope,t:'n',s:11}, {v:s.tested,t:'n',s:11}, {v:s.effective,t:'n',s:11},
+      {v:s.exception,t:'n',s:11}, {v:s.deficient,t:'n',s:11}, {v:s.na,t:'n',s:11},
+      {v:s.readiness===null?'—':s.readiness, t: s.readiness===null?undefined:'n', s:11}]);
+  });
+  sumRows.push([]);
+  sumRows.push([{v:'Verdict: '+data.verdict, s:5}]);
+  sumRows.push([{v:'Note: readiness = effective controls divided by all in-scope controls excluding those marked not applicable.', s:5}]);
+
+  return makeXlsx([
+    {name:'Audit Plan',      cols:[30,92], freeze:false, rows:planRows},
+    {name:'Control Results', cols:[9,20,30,46,18,20,14,46,32,13,12], freeze:true, rows:resRows},
+    {name:'Findings',        cols:[10,10,28,10,14,46,46,42,16,12], freeze:true, rows:finRows},
+    {name:'Summary',         cols:[36,16,12,12,12,12,10,14], freeze:false, rows:sumRows}
+  ]);
+}
+
+/* ---------------- PDF report ---------------- */
+function buildReportPdf(state){
+  var data=collectReportData(state);
+  var m=data.meta, o=data.overall;
+  var NAVY=[0.086,0.196,0.31], INK=[0.13,0.16,0.22], MUT=[0.42,0.47,0.55], LIGHT=[0.90,0.92,0.95];
+  var genIso=new Date().toISOString().slice(0,10);
+  var doc=new PDFDoc({margin:56});
+  var f=new FlowDoc(doc);
+
+  /* ---------- cover ---------- */
+  doc.text('SOC 2 READINESS ASSESSMENT',{x:306,y:308,size:21,font:'F2',color:NAVY,align:'center'});
+  doc.text('Internal Audit Report \u2014 Trust Services Criteria',{x:306,y:336,size:11,font:'F3',color:MUT,align:'center'});
+  doc.text(m.company||'Service Organization',{x:306,y:376,size:15,font:'F2',color:INK,align:'center'});
+  doc.text('Criteria in scope: '+m.scopeCatNames,{x:306,y:398,size:9.5,font:'F1',color:MUT,align:'center'});
+  doc.line(236,418,376,418,1.2,NAVY);
+  f.d.y=442;
+  var infoRows=[
+    [{text:'Company',bold:true,color:NAVY},m.company||'—'],
+    [{text:'Industry',bold:true,color:NAVY},m.industry||'—'],
+    [{text:'System in scope',bold:true,color:NAVY},{lines:[{text:m.system||'—'}]}],
+    [{text:'Engagement type',bold:true,color:NAVY},m.typeLabel],
+    [{text:'Review period',bold:true,color:NAVY},m.periodText],
+    [{text:'Auditor',bold:true,color:NAVY},m.auditor||'—'],
+    [{text:'Audit firm / team',bold:true,color:NAVY},m.firm||'—'],
+    [{text:'Prepared by',bold:true,color:NAVY},m.preparedBy||'—'],
+    [{text:'Planned fieldwork',bold:true,color:NAVY},m.plannedText],
+    [{text:'Report date',bold:true,color:NAVY},m.reportDate?fmtDate(m.reportDate):fmtDate(genIso)]
+  ];
+  f.table({header:false,fontSize:9,pad:5,cols:[{w:150},{w:350}],rows:infoRows});
+  f.d.y+=6;
+  var bw=360, bx=306-bw/2;
+  doc.fillRect(bx,f.d.y,bw,30,[0.93,0.95,0.98]);
+  doc.line(bx,f.d.y,bx+bw,f.d.y,0.8,NAVY);
+  doc.line(bx,f.d.y+30,bx+bw,f.d.y+30,0.8,NAVY);
+  doc.text('CONFIDENTIAL \u2014 INTERNAL AUDIT WORKING PAPERS',{x:306,y:f.d.y+19,size:9,font:'F2',color:NAVY,align:'center'});
+  doc.newPage();
+
+  /* ---------- 1 executive summary ---------- */
+  f.heading('1.','Executive summary');
+  data.execSummary.forEach(function(p){ f.para(p,{size:9.5}); });
+  f.para(data.verdict,{size:9.5,font:'F2',color:NAVY,spaceAfter:8});
+
+  /* ---------- 2 scope & methodology ---------- */
+  f.heading('2.','Scope and methodology');
+  f.para('Entity and system: '+(m.company||'—')+(m.industry?(' ('+m.industry+')'):'')+'. System in scope: '+(m.system||'—'),{size:9.5});
+  f.para('Criteria: the assessment covers the in-scope categories of the AICPA Trust Services Criteria \u2014 '+m.scopeCatNames
+    +'. Security (the Common Criteria CC1\u2013CC9) is mandatory in every SOC 2 examination; the additional categories were selected in the audit plan. '
+    +'In total, '+o.inScope+' controls were scoped for testing, as recorded in the Control Results workbook.',{size:9.5});
+  f.para('Engagement type: '+m.typeLabel+'.',{size:9.5});
+  f.para('Test procedures: the auditor applied the following methods as applicable to each control \u2014 '+data.methodsList
+    +'. Test method, sample size, evidence obtained, exceptions and the tester/date are recorded per control in the accompanying Excel workbook (Control Results sheet).',{size:9.5});
+  f.para('Basis of preparation: this document is an internal audit / readiness working paper generated with the SOC 2 Audit Toolkit. '
+    +'It is not a SOC 2 attestation report under AICPA attestation standards; an official SOC 2 opinion may be issued only by a licensed certified public accounting firm.',{size:9,font:'F3',color:MUT});
+
+  /* ---------- 3 summary of results ---------- */
+  f.heading('3.','Summary of results by category');
+  var sumCols=[{w:150,label:'Category'},{w:52,label:'In scope',align:'center'},{w:48,label:'Tested',align:'center'},
+    {w:56,label:'Effective',align:'center'},{w:62,label:'Exceptions',align:'center'},{w:56,label:'Deficient',align:'center'},
+    {w:38,label:'N/A',align:'center'},{w:48,label:'Ready %',align:'center'}];
+  var sumRows=data.cats.map(function(c){
+    var s=c.stats;
+    return [c.name,{text:String(s.inScope),align:'center'},{text:String(s.tested),align:'center'},
+      {text:String(s.effective),align:'center'},{text:String(s.exception),align:'center'},
+      {text:String(s.deficient),align:'center'},{text:String(s.na),align:'center'},
+      {text:s.readiness===null?'\u2014':s.readiness+'%',align:'center'}];
+  });
+  sumRows.push([{text:'Total',bold:true},{text:String(o.inScope),bold:true,align:'center'},
+    {text:String(o.tested),bold:true,align:'center'},{text:String(o.effective),bold:true,align:'center'},
+    {text:String(o.exception),bold:true,align:'center'},{text:String(o.deficient),bold:true,align:'center'},
+    {text:String(o.na),bold:true,align:'center'},{text:o.readiness===null?'\u2014':o.readiness+'%',bold:true,align:'center'}]);
+  f.table({cols:sumCols,rows:sumRows,fontSize:8.5});
+  f.para('Readiness = effective controls divided by all in-scope controls excluding those marked not applicable.',{size:7.8,font:'F3',color:MUT,spaceAfter:8});
+
+  /* ---------- 4 detailed results ---------- */
+  if(m.includeDetail){
+    f.heading('4.','Detailed control results');
+    data.cats.forEach(function(cat){
+      f.subheading(cat.name+' \u2014 '+cat.controls.length+' control(s) in scope');
+      var cols;
+      if(m.includeEvidence){
+        cols=[{w:34,label:'Ref'},{w:168,label:'Control'},{w:58,label:'Status'},{w:62,label:'Methods'},{w:178,label:'Evidence & notes'}];
+      } else {
+        cols=[{w:38,label:'Ref'},{w:214,label:'Control'},{w:70,label:'Status'},{w:80,label:'Methods'},{w:98,label:'Tested by / date'}];
+      }
+      var rows=cat.controls.map(function(c){
+        var r={ref:c.ref,title:c.title,focus:c.focus,status:c.status,statusLabel:c.statusLabel,
+          methods:c.methods,sample:c.sample,evidence:c.evidence,notes:c.notes,tester:c.tester,date:c.date};
+        var ctrlCell={lines:[{text:r.ref+' \u2014 '+r.title,bold:true},{text:r.focus,size:7.2,color:MUT}]};
+        var stCell={text:r.statusLabel,color:STATUS_COLOR_PDF[r.status]||INK};
+        if(m.includeEvidence){
+          var evLines=[];
+          if(r.evidence) evLines.push({text:'Evidence: '+r.evidence});
+          if(r.notes) evLines.push({text:'Exceptions/notes: '+r.notes,size:7.5,color:[0.6,0.35,0.05]});
+          if(r.sample) evLines.push({text:'Sample: '+r.sample,size:7.5,color:MUT});
+          if(r.tester) evLines.push({text:'Tested by '+r.tester+(r.date?(' on '+fmtDate(r.date)):''),size:7.2,italic:true,color:MUT});
+          if(!evLines.length) evLines.push({text:'\u2014',color:MUT});
+          return [r.ref,ctrlCell,stCell,r.methods||'\u2014',{lines:evLines}];
+        }
+        return [r.ref,ctrlCell,stCell,r.methods||'\u2014',r.tester?(r.tester+(r.date?(', '+fmtDate(r.date)):'')):'\u2014'];
+      });
+      f.table({cols:cols,rows:rows,fontSize:8});
+    });
+  }
+
+  /* ---------- 5 findings ---------- */
+  f.heading('5.','Findings and remediation');
+  if(!data.findings.length){
+    f.para('No findings have been raised. Controls marked with exceptions or deficiencies should each have a corresponding finding recorded in the toolkit.',{size:9.5});
+  } else {
+    f.para('The following findings were identified during fieldwork. Each finding references the affected control, its severity, the agreed remediation and management response.',{size:9.5});
+    data.findings.forEach(function(fd){
+      f.need(90);
+      f.subheading(fd.id+' \u00B7 '+fd.severity+' severity \u00B7 '+(fd.ref||'\u2014')+(fd.controlTitle?(' '+fd.controlTitle):''));
+      f.para('Description: '+(fd.description||'—'),{size:9,indent:8,spaceAfter:3});
+      f.para('Recommendation: '+(fd.recommendation||'—'),{size:9,indent:8,spaceAfter:3});
+      f.para('Management response: '+(fd.mgmtResponse||'—'),{size:9,indent:8,spaceAfter:3});
+      f.para('Owner: '+(fd.owner||'—')+'   \u00B7   Target date: '+(fd.targetDate?fmtDate(fd.targetDate):'—')+'   \u00B7   Status: '+(fd.status||'Open'),{size:9,indent:8,font:'F3',color:MUT,spaceAfter:10});
+    });
+  }
+
+  /* ---------- 6 conclusion ---------- */
+  f.heading('6.','Conclusion and next steps');
+  f.para(data.verdict,{size:9.5});
+  if(m.nextSteps) f.para('Auditor notes and next steps: '+m.nextSteps,{size:9.5});
+  f.para('Distribution: this report is intended for internal management, the audit committee and, where applicable, the CPA firm engaged for the SOC 2 examination. It supports but does not replace the attestation process.',{size:9,font:'F3',color:MUT});
+
+  function footer(d,num,total){
+    d.line(56,d.ph-40,556,d.ph-40,0.6,[0.8,0.84,0.9]);
+    d.text('SOC 2 Audit Toolkit \u2014 internal audit working papers \u2014 generated '+genIso,{x:56,y:d.ph-27,size:7.5,font:'F3',color:[0.45,0.5,0.57]});
+    d.text('Page '+num+' of '+total,{x:556,y:d.ph-27,size:7.5,font:'F1',color:[0.45,0.5,0.57],align:'right'});
+  }
+  return doc.build(footer);
+}
+
+/* ---------------- on-screen HTML preview ---------------- */
+function buildReportPreviewHtml(state){
+  var data=collectReportData(state);
+  var m=data.meta, o=data.overall;
+  var h=[];
+  h.push('<h1>SOC 2 Readiness Assessment</h1>');
+  h.push('<p class="small">Internal Audit Report \u2014 Trust Services Criteria \u00B7 Report date: '+escHtml(m.reportDate?fmtDate(m.reportDate):fmtDate(new Date().toISOString().slice(0,10)))+'</p>');
+  h.push('<div class="cover-meta">');
+  [['Company',m.company],['Industry',m.industry],['System in scope',m.system],['Engagement type',m.typeLabel],
+   ['Review period',m.periodText],['Auditor',m.auditor],['Audit firm / team',m.firm],['Prepared by',m.preparedBy],
+   ['Planned fieldwork',m.plannedText],['Criteria in scope',m.scopeCatNames],['Report date',m.reportDate?fmtDate(m.reportDate):'']]
+   .forEach(function(p){ h.push('<div><span class="k">'+escHtml(p[0])+'</span><span>'+escHtml(p[1]||'—')+'</span></div>'); });
+  h.push('</div>');
+  h.push('<div class="confbox">CONFIDENTIAL \u2014 INTERNAL AUDIT WORKING PAPERS</div>');
+  h.push('<h2>1. Executive summary</h2>');
+  data.execSummary.forEach(function(p){ h.push('<p>'+escHtml(p)+'</p>'); });
+  h.push('<p><b>'+escHtml(data.verdict)+'</b></p>');
+  h.push('<h2>2. Scope and methodology</h2>');
+  h.push('<p><b>Entity and system:</b> '+escHtml(m.company||'—')+(m.industry?(' ('+escHtml(m.industry)+')'):'')+' — '+escHtml(m.system||'—')+'</p>');
+  h.push('<p><b>Criteria:</b> the assessment covers the in-scope categories of the AICPA Trust Services Criteria \u2014 '+escHtml(m.scopeCatNames)+'. Security (Common Criteria CC1\u2013CC9) is mandatory in every SOC 2 examination. In total, '+o.inScope+' controls were scoped for testing.</p>');
+  h.push('<p><b>Engagement type:</b> '+escHtml(m.typeLabel)+'</p>');
+  h.push('<p><b>Test procedures:</b> '+escHtml(data.methodsList)+'. Test method, sample, evidence, exceptions and tester/date are recorded per control in the Excel workbook (Control Results sheet).</p>');
+  h.push('<p class="small"><i>Basis of preparation: internal audit / readiness working paper generated with the SOC 2 Audit Toolkit; not a SOC 2 attestation under AICPA attestation standards. An official SOC 2 opinion may be issued only by a licensed CPA firm.</i></p>');
+  h.push('<h2>3. Summary of results by category</h2>');
+  h.push('<div class="tbl-wrap"><table class="tbl"><tr><th>Category</th><th>In scope</th><th>Tested</th><th>Effective</th><th>Exceptions</th><th>Deficient</th><th>N/A</th><th>Ready %</th></tr>');
+  data.cats.forEach(function(c){
+    var s=c.stats;
+    h.push('<tr><td>'+escHtml(c.name)+'</td><td>'+s.inScope+'</td><td>'+s.tested+'</td><td>'+s.effective+'</td><td>'+s.exception+'</td><td>'+s.deficient+'</td><td>'+s.na+'</td><td>'+(s.readiness===null?'—':s.readiness+'%')+'</td></tr>');
+  });
+  h.push('<tr><td><b>Total</b></td><td><b>'+o.inScope+'</b></td><td><b>'+o.tested+'</b></td><td><b>'+o.effective+'</b></td><td><b>'+o.exception+'</b></td><td><b>'+o.deficient+'</b></td><td><b>'+o.na+'</b></td><td><b>'+(o.readiness===null?'—':o.readiness+'%')+'</b></td></tr>');
+  h.push('</table></div>');
+  h.push('<p class="small">Readiness = effective controls divided by all in-scope controls excluding those marked not applicable.</p>');
+  if(m.includeDetail){
+    h.push('<h2>4. Detailed control results</h2>');
+    data.cats.forEach(function(cat){
+      h.push('<h3>'+escHtml(cat.name)+' — '+cat.controls.length+' control(s) in scope</h3>');
+      h.push('<div class="tbl-wrap"><table class="tbl"><tr><th style="white-space:nowrap">Ref</th><th style="width:34%">Control</th><th>Status</th><th>Methods</th><th style="width:32%">Evidence &amp; notes</th></tr>');
+      cat.controls.forEach(function(c){
+        var ev=''; 
+        if(c.evidence) ev+='<div><b>Evidence:</b> '+escHtml(c.evidence)+'</div>';
+        if(c.notes) ev+='<div><b>Exceptions/notes:</b> '+escHtml(c.notes)+'</div>';
+        if(c.sample) ev+='<div class="small">Sample: '+escHtml(c.sample)+'</div>';
+        if(c.tester) ev+='<div class="small"><i>Tested by '+escHtml(c.tester)+(c.date?(' on '+escHtml(fmtDate(c.date))):'')+'</i></div>';
+        h.push('<tr><td style="white-space:nowrap"><b>'+escHtml(c.ref)+'</b></td><td><b>'+escHtml(c.title)+'</b><div class="small">'+escHtml(c.focus)+'</div></td><td class="st-'+escHtml(c.status)+'" style="white-space:nowrap">'+escHtml(c.statusLabel)+'</td><td>'+escHtml(c.methods||'—')+'</td><td>'+(ev||'—')+'</td></tr>');
+      });
+      h.push('</table></div>');
+    });
+  }
+  h.push('<h2>5. Findings and remediation</h2>');
+  if(!data.findings.length){
+    h.push('<p>No findings have been raised. Controls marked with exceptions or deficiencies should each have a corresponding finding recorded in the toolkit.</p>');
+  } else {
+    h.push('<p>The following findings were identified during fieldwork, with severity, remediation and management response.</p>');
+    data.findings.forEach(function(fd){
+      h.push('<div class="findingblk"><div class="fh">'+escHtml(fd.id)+' \u00B7 '+escHtml(fd.severity)+' severity \u00B7 '+escHtml(fd.ref||'—')+(fd.controlTitle?(' '+escHtml(fd.controlTitle)):'')+'</div>');
+      h.push('<div class="fl"><b>Description:</b>'+escHtml(fd.description||'—')+'</div>');
+      h.push('<div class="fl"><b>Recommendation:</b>'+escHtml(fd.recommendation||'—')+'</div>');
+      h.push('<div class="fl"><b>Management response:</b>'+escHtml(fd.mgmtResponse||'—')+'</div>');
+      h.push('<div class="fl"><b>Owner:</b>'+escHtml(fd.owner||'—')+' \u00B7 <b>Target:</b> '+escHtml(fd.targetDate?fmtDate(fd.targetDate):'—')+' \u00B7 <b>Status:</b> '+escHtml(fd.status||'Open')+'</div></div>');
+    });
+  }
+  h.push('<h2>6. Conclusion and next steps</h2>');
+  h.push('<p>'+escHtml(data.verdict)+'</p>');
+  if(m.nextSteps) h.push('<p><b>Auditor notes and next steps:</b> '+escHtml(m.nextSteps)+'</p>');
+  h.push('<p class="small">Distribution: intended for internal management, the audit committee and, where applicable, the CPA firm engaged for the SOC 2 examination. It supports but does not replace the attestation process.</p>');
+  return h.join('');
+}
+
+
+/* ============================================================
+   APP — UI wiring, state, autosave, downloads (DOM layer)
+   ============================================================ */
+(function(){
+'use strict';
+var LSKEY='soc2-audit-tool-v1';
+function $(id){ return document.getElementById(id); }
+function esc(s){ return escHtml(s); }
+function todayIso(){ return new Date().toISOString().slice(0,10); }
+function slug(s){ return String(s||'').toLowerCase().replace(/[^a-z0-9]+/g,'-').replace(/^-+|-+$/g,'').slice(0,40)||'audit'; }
+var state=null;
+var currentView='plan';
+var execFilters={q:'',cat:'',status:''};
+var planQuery='';
+
+function blankState(){
+  return {
+    version:1,
+    plan:{company:'',industry:'',system:'',engType:'type2',periodStart:'',periodEnd:'',
+      auditor:'',firm:'',preparedBy:'',planStart:'',planEnd:''},
+    scope:{categories:{security:true,availability:false,processing_integrity:false,confidentiality:false,privacy:false},controls:{}},
+    results:{},
+    findings:[],
+    report:{includeDetail:true,includeEvidence:true,nextSteps:'',reportDate:todayIso()}
+  };
+}
+function loadSaved(){
+  try{ var raw=localStorage.getItem(LSKEY); if(raw){ var s=JSON.parse(raw); if(s&&s.plan&&s.scope) return s; } }catch(e){}
+  return null;
+}
+
+/* ---------- persistence + counters ---------- */
+var saveTimer=null;
+function touch(){
+  clearTimeout(saveTimer);
+  saveTimer=setTimeout(function(){
+    try{
+      localStorage.setItem(LSKEY,JSON.stringify(state));
+      $('saveState').textContent='Saved '+new Date().toLocaleTimeString();
+    }catch(e){ $('saveState').textContent='Storage unavailable — use Backup'; }
+  },250);
+  updateNavCounts();
+  if(currentView==='execute') renderProgress();
+}
+function updateNavCounts(){
+  var ctls=inScopeControls();
+  var tested=0;
+  ctls.forEach(function(x){
+    var r=state.results[x.c.ref]; var st=(r&&r.status)?r.status:'nottested';
+    if(st!=='nottested'&&st!=='na') tested++;
+  });
+  $('badgePlan').textContent=ctls.length;
+  $('badgeExec').textContent=tested+'/'+ctls.length;
+  $('badgeFindings').textContent=(state.findings||[]).length;
+}
+
+/* ---------- helpers ---------- */
+function inScopeControls(){
+  var out=[];
+  CATS.forEach(function(cat){
+    if(!state.scope.categories[cat.id]) return;
+    controlsForCat(cat.id).forEach(function(c){
+      if(state.scope.controls[c.ref]!==false) out.push({cat:cat,c:c});
+    });
+  });
+  return out;
+}
+function cssId(ref){ return String(ref).replace(/\./g,'_'); }
+var toastTimer=null;
+function toast(msg){
+  var t=$('toast'); t.textContent=msg; t.classList.add('show');
+  clearTimeout(toastTimer); toastTimer=setTimeout(function(){ t.classList.remove('show'); },2800);
+}
+function download(name,bytes,mime){
+  var blob=new Blob([bytes],{type:mime});
+  var a=document.createElement('a');
+  a.href=URL.createObjectURL(blob); a.download=name;
+  document.body.appendChild(a); a.click(); a.remove();
+  setTimeout(function(){ URL.revokeObjectURL(a.href); },3000);
+}
+
+/* ---------- views ---------- */
+function showView(v){
+  currentView=v;
+  ['plan','execute','findings','report'].forEach(function(x){ $('view-'+x).hidden=(x!==v); });
+  var btns=document.querySelectorAll('#mainTabs button');
+  for(var i=0;i<btns.length;i++) btns[i].classList.toggle('active',btns[i].getAttribute('data-view')===v);
+  if(v==='execute') renderExecute();
+  if(v==='findings') renderFindings();
+  if(v==='report') renderReport();
+}
+
+/* ---------- plan ---------- */
+var PLAN_FIELDS=[['inCompany','company'],['inIndustry','industry'],['inSystem','system'],['inEngType','engType'],
+  ['inPeriodStart','periodStart'],['inPeriodEnd','periodEnd'],['inAuditor','auditor'],['inFirm','firm'],
+  ['inPreparedBy','preparedBy'],['inPlanStart','planStart'],['inPlanEnd','planEnd']];
+function syncPlanInputs(){
+  PLAN_FIELDS.forEach(function(p){ $(p[0]).value=state.plan[p[1]]||''; });
+}
+function bindPlanInputs(){
+  PLAN_FIELDS.forEach(function(p){
+    var el=$(p[0]);
+    el.addEventListener('input',function(){
+      state.plan[p[1]]=el.value; touch(); updatePlanSummary();
+    });
+  });
+}
+function renderCats(){
+  var html='';
+  CATS.forEach(function(cat){
+    var on=!!state.scope.categories[cat.id];
+    var total=controlsForCat(cat.id).length;
+    var included=controlsForCat(cat.id).filter(function(c){ return state.scope.controls[c.ref]!==false; }).length;
+    html+='<div class="catcard'+(on?' on':'')+(cat.required?' locked':'')+'" data-cat="'+cat.id+'">'+
+      '<div style="display:flex;align-items:center;gap:8px">'+
+      '<input type="checkbox" '+(on?'checked':'')+(cat.required?' disabled':'')+' data-cat="'+cat.id+'">'+
+      '<b>'+esc(cat.name)+'</b><span class="cnt">'+(on?(included+'/'+total):(total+' ctrl'))+'</span></div>'+
+      '<p>'+esc(cat.desc)+'</p></div>';
+  });
+  $('catList').innerHTML=html;
+  $('tscNote').textContent=TSC_NOTE;
+}
+function renderPlanControls(){
+  var q=planQuery.trim().toLowerCase();
+  var html='';
+  CATS.forEach(function(cat){
+    if(!state.scope.categories[cat.id]) return;
+    var all=controlsForCat(cat.id);
+    var included=all.filter(function(c){ return state.scope.controls[c.ref]!==false; }).length;
+    var ctls=all.filter(function(c){
+      return !q || (c.ref+' '+c.title+' '+c.focus+' '+c.test).toLowerCase().indexOf(q)>=0;
+    });
+    if(!ctls.length) return;
+    html+='<div class="scope-group"><h3>'+esc(cat.name)+
+      ' <span style="font-weight:400;color:var(--muted)">&middot; '+included+' of '+all.length+' in scope</span>'+
+      '<button type="button" class="btn btn-sm" data-all="'+cat.id+'" data-val="1" style="margin-left:auto">Select all</button>'+
+      '<button type="button" class="btn btn-sm" data-all="'+cat.id+'" data-val="0">Deselect all</button></h3>';
+    ctls.forEach(function(c){
+      var on=state.scope.controls[c.ref]!==false;
+      html+='<label class="rowline"><input type="checkbox" data-ctl="'+c.ref+'" '+(on?'checked':'')+'>'+
+        '<span class="ref">'+esc(c.ref)+'</span>'+
+        '<span><span class="t">'+esc(c.title)+'</span> <span class="f">&mdash; '+esc(c.focus)+'</span></span></label>';
+    });
+    html+='</div>';
+  });
+  if(!html) html='<div class="empty">No controls to show — tick criteria categories above (Security is required in every SOC 2).</div>';
+  $('planControlTables').innerHTML=html;
+}
+function updatePlanSummary(){
+  var sel=CATS.filter(function(c){ return state.scope.categories[c.id]; });
+  var total=inScopeControls().length;
+  $('planSummary').innerHTML=
+    '<div><b>'+sel.length+'</b>criteria categories in scope</div>'+
+    '<div><b>'+total+'</b>controls planned for fieldwork</div>'+
+    '<div><b>'+esc(state.plan.company||'\u2014')+'</b>service organization</div>'+
+    '<div><b>'+esc((state.plan.periodStart?fmtDate(state.plan.periodStart):'\u2014')+(state.plan.periodEnd?(' \u2013 '+fmtDate(state.plan.periodEnd)):''))+'</b>audit period</div>';
+  updateNavCounts();
+}
+
+/* ---------- execute ---------- */
+function renderExecute(){
+  var sel=$('execCat');
+  var opts='<option value="">All categories</option>';
+  CATS.forEach(function(cat){
+    if(state.scope.categories[cat.id]) opts+='<option value="'+cat.id+'">'+esc(cat.short)+'</option>';
+  });
+  sel.innerHTML=opts;
+  sel.value=execFilters.cat;
+  if(!sel.value&&execFilters.cat){ execFilters.cat=''; }
+  renderProgress();
+  renderExecList();
+}
+function renderProgress(){
+  var ctls=inScopeControls();
+  var counts={effective:0,exception:0,deficient:0,na:0,nottested:0};
+  ctls.forEach(function(x){
+    var r=state.results[x.c.ref]; var st=(r&&r.status)?r.status:'nottested';
+    counts[st]++;
+  });
+  var tested=counts.effective+counts.exception+counts.deficient;
+  var total=ctls.length;
+  $('execBar').style.width=(total?Math.round(tested*100/total):0)+'%';
+  $('execPct').textContent=tested+' / '+total+' tested';
+  $('execChips').innerHTML=
+    '<span class="chip st-effective">Effective '+counts.effective+'</span>'+
+    '<span class="chip st-exception">Exceptions '+counts.exception+'</span>'+
+    '<span class="chip st-deficient">Deficient '+counts.deficient+'</span>'+
+    '<span class="chip st-na">N/A '+counts.na+'</span>'+
+    '<span class="chip st-nottested">Untested '+counts.nottested+'</span>';
+  var bars='';
+  CATS.forEach(function(cat){
+    if(!state.scope.categories[cat.id]) return;
+    var cs=controlsForCat(cat.id).filter(function(c){ return state.scope.controls[c.ref]!==false; });
+    var eff=0;
+    cs.forEach(function(c){ var r=state.results[c.ref]; if(r&&r.status==='effective') eff++; });
+    var pct=cs.length?Math.round(eff*100/cs.length):0;
+    bars+='<div class="cb"><div class="lbl"><span>'+esc(cat.short)+'</span><span>'+eff+'/'+cs.length+' effective</span></div>'+
+      '<div class="tr"><div style="width:'+pct+'%"></div></div></div>';
+  });
+  $('execCatBars').innerHTML=bars;
+  updateNavCounts();
+}
+function controlCard(c,cat){
+  var r=state.results[c.ref]||{};
+  var st=r.status||'nottested';
+  var cls={effective:'eff',exception:'exc',deficient:'def',na:'na'}[st]||'';
+  var methods=METHODS.map(function(m){
+    var on=r.methods&&r.methods.indexOf(m)>=0;
+    return '<span class="mchip'+(on?' on':'')+'" data-m="'+m+'" data-ref="'+c.ref+'">'+m+'</span>';
+  }).join('');
+  var statusOpts=STATUSES.map(function(s){
+    return '<option value="'+s.id+'"'+(st===s.id?' selected':'')+'>'+esc(s.label)+'</option>';
+  }).join('');
+  return '<div class="ctrl-card '+cls+'" id="card-'+cssId(c.ref)+'">'+
+    '<div class="ctrl-head"><span class="ref">'+esc(c.ref)+'</span><b>'+esc(c.title)+'</b>'+
+    '<span class="pill st-'+st+'" data-pill>'+esc(STATUS_LABEL[st])+'</span></div>'+
+    '<div style="padding:10px 14px 0"><div style="font-size:13px;color:var(--muted)">'+esc(c.focus)+'</div>'+
+    '<div class="ctrl-hint">Suggested tests: '+esc(c.test)+'</div></div>'+
+    '<div class="ctrl-body">'+
+    '<div class="field"><label>Status</label><select data-f="status" data-ref="'+c.ref+'">'+statusOpts+'</select></div>'+
+    '<div class="field"><label>Test methods</label><div class="methods">'+methods+'</div></div>'+
+    '<div class="field"><label>Sample size / items</label><input data-f="sample" data-ref="'+c.ref+'" value="'+esc(r.sample||'')+'" placeholder="e.g. 12 joiners / 8 leavers"></div>'+
+    '<div class="field"><label>Tester</label><input data-f="tester" data-ref="'+c.ref+'" value="'+esc(r.tester||'')+'" placeholder="Who performed the test?"></div>'+
+    '<div class="field"><label>Test date</label><input type="date" data-f="date" data-ref="'+c.ref+'" value="'+esc(r.date||'')+'"></div>'+
+    '<div class="field full"><label>Evidence obtained &amp; observations</label><textarea data-f="evidence" data-ref="'+c.ref+'" placeholder="What was inspected or inquired? Reference workpaper IDs, screenshots, configs checked…">'+esc(r.evidence||'')+'</textarea></div>'+
+    '<div class="field full"><label>Exceptions / notes</label><input data-f="notes" data-ref="'+c.ref+'" value="'+esc(r.notes||'')+'" placeholder="Describe any deviation found (blank if none)…"></div>'+
+    '</div></div>';
+}
+function renderExecList(){
+  var q=execFilters.q.toLowerCase(), fc=execFilters.cat, fs=execFilters.status;
+  var html='';
+  CATS.forEach(function(cat){
+    if(fc&&cat.id!==fc) return;
+    if(!state.scope.categories[cat.id]) return;
+    var ctls=controlsForCat(cat.id).filter(function(c){
+      if(state.scope.controls[c.ref]===false) return false;
+      if(fs){ var r=state.results[c.ref]; var st=(r&&r.status)?r.status:'nottested'; if(st!==fs) return false; }
+      if(q&&(c.ref+' '+c.title+' '+c.focus).toLowerCase().indexOf(q)<0) return false;
+      return true;
+    });
+    if(!ctls.length) return;
+    html+='<h3 style="color:var(--navy);font-size:15px;margin:18px 0 8px">'+esc(cat.name)+'</h3>';
+    ctls.forEach(function(c){ html+=controlCard(c,cat); });
+  });
+  if(!html) html='<div class="card empty">No controls match the filters — or the plan has no categories selected yet. Go to the Plan tab to scope the audit.</div>';
+  $('execList').innerHTML=html;
+}
+
+/* ---------- findings ---------- */
+function nextFindingId(){
+  var n=1, id;
+  do{ id='F-'+(n<10?'0':'')+n; n++; }while(state.findings.some(function(f){ return f.id===id; }));
+  return id;
+}
+function findingCard(fd,i){
+  var sevOpts=['High','Medium','Low'].map(function(s){
+    return '<option'+(fd.severity===s?' selected':'')+'>'+s+'</option>';
+  }).join('');
+  var stOpts=['Open','In remediation','Closed'].map(function(s){
+    return '<option'+((fd.status||'Open')===s?' selected':'')+'>'+s+'</option>';
+  }).join('');
+  return '<div class="finding sev-'+esc(fd.severity||'Low')+'">'+
+    '<div class="fhead"><span class="fid">'+esc(fd.id)+'</span>'+
+    '<span class="sevtag sv-'+esc(fd.severity||'Low')+'">'+esc(fd.severity||'Low')+'</span>'+
+    '<span style="font-family:ui-monospace,Menlo,Consolas,monospace;font-size:12px;font-weight:700;color:var(--navy);background:#e8eef7;border-radius:5px;padding:2px 8px">'+esc(fd.ref||'\u2014')+'</span>'+
+    '<b>'+esc(fd.controlTitle||'')+'</b>'+
+    '<button type="button" class="btn btn-sm btn-danger" data-del="'+i+'" style="margin-left:auto">Delete</button></div>'+
+    '<div class="grid">'+
+    '<div class="field"><label>Control ref</label><input data-f="ref" data-i="'+i+'" list="refList" value="'+esc(fd.ref||'')+'" placeholder="e.g. CC6.2"></div>'+
+    '<div class="field"><label>Severity</label><select data-f="severity" data-i="'+i+'">'+sevOpts+'</select></div>'+
+    '<div class="field"><label>Remediation status</label><select data-f="status" data-i="'+i+'">'+stOpts+'</select></div>'+
+    '<div class="field"><label>Owner</label><input data-f="owner" data-i="'+i+'" value="'+esc(fd.owner||'')+'" placeholder="Responsible person"></div>'+
+    '<div class="field"><label>Target date</label><input type="date" data-f="targetDate" data-i="'+i+'" value="'+esc(fd.targetDate||'')+'"></div>'+
+    '<div class="field full"><label>Description</label><textarea data-f="description" data-i="'+i+'">'+esc(fd.description||'')+'</textarea></div>'+
+    '<div class="field full"><label>Recommendation</label><textarea data-f="recommendation" data-i="'+i+'">'+esc(fd.recommendation||'')+'</textarea></div>'+
+    '<div class="field full"><label>Management response</label><textarea data-f="mgmtResponse" data-i="'+i+'">'+esc(fd.mgmtResponse||'')+'</textarea></div>'+
+    '</div></div>';
+}
+function renderFindings(){
+  var list=state.findings||[];
+  var html='';
+  if(!list.length){
+    html='<div class="card empty">No findings yet. Use &ldquo;Sync findings from fieldwork&rdquo; — every control marked <span class="pill st-exception">exception</span> or <span class="pill st-deficient">deficient</span> will be pulled in automatically.</div>';
+  } else {
+    list.forEach(function(fd,i){ html+=findingCard(fd,i); });
+  }
+  $('findingsList').innerHTML=html;
+  $('badgeFindings').textContent=list.length;
+}
+function syncFindings(){
+  var added=0;
+  inScopeControls().forEach(function(x){
+    var r=state.results[x.c.ref]; if(!r) return;
+    if(r.status!=='exception'&&r.status!=='deficient') return;
+    if(state.findings.some(function(f){ return f.ref===x.c.ref; })) return;
+    state.findings.push({
+      id:nextFindingId(), ref:x.c.ref, severity:(r.status==='deficient'?'High':'Medium'),
+      description:x.c.ref+' \u2014 '+x.c.title+': '+(r.notes||r.evidence||'Exception noted during fieldwork.'),
+      recommendation:'', mgmtResponse:'', owner:'', targetDate:'', status:'Open'
+    });
+    added++;
+  });
+  renderFindings(); touch();
+  toast(added?(added+' finding(s) added from fieldwork'):'No new exceptions to sync — findings already exist');
+}
+
+/* ---------- report ---------- */
+function syncReportOptions(){
+  var rep=state.report||{};
+  $('optReportDate').value=rep.reportDate||todayIso();
+  $('optIncludeDetail').checked=rep.includeDetail!==false;
+  $('optIncludeEvidence').checked=rep.includeEvidence!==false;
+  $('optNextSteps').value=rep.nextSteps||'';
+}
+function renderPreview(){ $('reportPreview').innerHTML=buildReportPreviewHtml(state); }
+function renderReport(){ syncReportOptions(); renderPreview(); }
+function fileBase(){ return 'SOC2-'+slug(state.plan.company)+'-'+(state.report.reportDate||todayIso()); }
+
+/* ---------- boot ---------- */
+function bindAll(){
+  /* tabs */
+  var btns=document.querySelectorAll('#mainTabs button');
+  for(var i=0;i<btns.length;i++){
+    btns[i].addEventListener('click',function(){ showView(this.getAttribute('data-view')); });
+  }
+  /* plan inputs */
+  bindPlanInputs();
+  $('ctrlSearch').addEventListener('input',function(){ planQuery=this.value; renderPlanControls(); });
+  $('catList').addEventListener('click',function(e){
+    var card=e.target.closest('.catcard');
+    if(!card||card.classList.contains('locked')) return;
+    var id=card.getAttribute('data-cat');
+    state.scope.categories[id]=!state.scope.categories[id];
+    renderCats(); renderPlanControls(); updatePlanSummary(); touch();
+  });
+  $('planControlTables').addEventListener('change',function(e){
+    var t=e.target;
+    if(t.hasAttribute('data-ctl')){
+      var ref=t.getAttribute('data-ctl');
+      state.scope.controls[ref]=t.checked;
+      renderCats(); updatePlanSummary(); touch();
+    }
+  });
+  $('planControlTables').addEventListener('click',function(e){
+    var b=e.target.closest('[data-all]');
+    if(!b) return;
+    var val=b.getAttribute('data-val')==='1';
+    controlsForCat(b.getAttribute('data-all')).forEach(function(c){
+      state.scope.controls[c.ref]=val;
+    });
+    renderPlanControls(); renderCats(); updatePlanSummary(); touch();
+  });
+  /* execute filters + list delegation */
+  $('execSearch').addEventListener('input',function(){ execFilters.q=this.value; renderExecList(); });
+  $('execCat').addEventListener('change',function(){ execFilters.cat=this.value; renderExecList(); });
+  $('execStatus').addEventListener('change',function(){ execFilters.status=this.value; renderExecList(); });
+  $('execList').addEventListener('change',function(e){
+    var t=e.target, ref=t.getAttribute('data-ref');
+    if(!ref) return;
+    if(t.getAttribute('data-f')==='status'){
+      state.results[ref]=state.results[ref]||{};
+      state.results[ref].status=t.value;
+      var card=$('card-'+cssId(ref));
+      if(card){
+        var cls={effective:'eff',exception:'exc',deficient:'def',na:'na'}[t.value]||'';
+        card.className='ctrl-card '+cls;
+        var pill=card.querySelector('[data-pill]');
+        pill.className='pill st-'+t.value;
+        pill.textContent=STATUS_LABEL[t.value];
+      }
+      touch();
+      if(t.value==='exception'||t.value==='deficient') toast('Status updated — sync findings in tab 3 to track remediation');
+    }
+  });
+  $('execList').addEventListener('click',function(e){
+    var chip=e.target.closest('.mchip');
+    if(chip){
+      var ref=chip.getAttribute('data-ref'), m=chip.getAttribute('data-m');
+      state.results[ref]=state.results[ref]||{};
+      state.results[ref].methods=state.results[ref].methods||[];
+      var arr=state.results[ref].methods, ix=arr.indexOf(m);
+      if(ix>=0) arr.splice(ix,1); else arr.push(m);
+      chip.classList.toggle('on');
+      touch();
+    }
+  });
+  $('execList').addEventListener('input',function(e){
+    var t=e.target, ref=t.getAttribute('data-ref'), f=t.getAttribute('data-f');
+    if(!ref||!f||f==='status') return;
+    state.results[ref]=state.results[ref]||{};
+    state.results[ref][f]=t.value;
+    touch();
+  });
+  /* findings */
+  $('btnSyncFindings').addEventListener('click',syncFindings);
+  $('btnAddFinding').addEventListener('click',function(){
+    state.findings.push({id:nextFindingId(),ref:'',severity:'Medium',description:'',recommendation:'',mgmtResponse:'',owner:'',targetDate:'',status:'Open'});
+    renderFindings(); touch();
+    var cards=document.querySelectorAll('.finding');
+    if(cards.length) cards[cards.length-1].scrollIntoView({behavior:'smooth',block:'center'});
+  });
+  $('findingsList').addEventListener('input',function(e){
+    var t=e.target, i=parseInt(t.getAttribute('data-i'),10), f=t.getAttribute('data-f');
+    if(t.getAttribute('data-i')===null||!f) return;
+    if(!state.findings[i]) return;
+    state.findings[i][f]=t.value;
+    touch();
+  });
+  $('findingsList').addEventListener('change',function(e){
+    var t=e.target, i=parseInt(t.getAttribute('data-i'),10), f=t.getAttribute('data-f');
+    if(t.getAttribute('data-i')===null||!f) return;
+    if(!state.findings[i]) return;
+    state.findings[i][f]=t.value;
+    if(f==='severity'){ renderFindings(); }
+    touch();
+  });
+  $('findingsList').addEventListener('click',function(e){
+    var b=e.target.closest('[data-del]');
+    if(!b) return;
+    if(!confirm('Delete this finding?')) return;
+    state.findings.splice(parseInt(b.getAttribute('data-del'),10),1);
+    renderFindings(); touch();
+  });
+  /* report options + exports */
+  $('optReportDate').addEventListener('input',function(){ state.report.reportDate=this.value; touch(); renderPreview(); });
+  $('optIncludeDetail').addEventListener('change',function(){ state.report.includeDetail=this.checked; touch(); renderPreview(); });
+  $('optIncludeEvidence').addEventListener('change',function(){ state.report.includeEvidence=this.checked; touch(); renderPreview(); });
+  $('optNextSteps').addEventListener('input',function(){ state.report.nextSteps=this.value; touch(); });
+  $('btnPdf').addEventListener('click',function(){
+    try{
+      download(fileBase()+'-report.pdf',buildReportPdf(state),'application/pdf');
+      toast('PDF report downloaded');
+    }catch(err){ toast('PDF generation failed: '+err.message); }
+  });
+  $('btnXlsx').addEventListener('click',function(){
+    try{
+      download(fileBase()+'-workbook.xlsx',buildWorkbook(state),'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');
+      toast('Excel workbook downloaded');
+    }catch(err){ toast('Excel generation failed: '+err.message); }
+  });
+  $('btnPrint').addEventListener('click',function(){ window.print(); });
+  /* header actions */
+  $('btnNew').addEventListener('click',function(){
+    if(!confirm('Start a new blank audit? The current audit will be replaced — use Backup first if you want to keep it.')) return;
+    state=blankState();
+    refreshAll();
+    showView('plan');
+    toast('New blank audit started');
+  });
+  $('btnDemo').addEventListener('click',function(){
+    if(!confirm('Load the demo audit (Acme Cloud Services)? The current audit will be replaced.')) return;
+    state=demoState();
+    refreshAll();
+    showView('plan');
+    toast('Demo audit loaded');
+  });
+  $('btnExportJson').addEventListener('click',function(){
+    download(fileBase()+'-project.json',JSON.stringify(state,null,2),'application/json');
+    toast('JSON backup downloaded');
+  });
+  $('fileImport').addEventListener('change',function(e){
+    var file=e.target.files[0]; if(!file) return;
+    var reader=new FileReader();
+    reader.onload=function(){
+      try{
+        var s=JSON.parse(reader.result);
+        if(!s||!s.plan||!s.scope||!s.results) throw new Error('not a toolkit backup file');
+        state=s;
+        refreshAll();
+        showView('plan');
+        toast('Audit restored from backup');
+      }catch(err){ toast('Import failed: '+err.message); }
+    };
+    reader.readAsText(file);
+    e.target.value='';
+  });
+}
+function refreshAll(){
+  syncPlanInputs();
+  renderCats();
+  planQuery=''; $('ctrlSearch').value='';
+  renderPlanControls();
+  updatePlanSummary();
+  execFilters={q:'',cat:'',status:''};
+  $('execSearch').value='';
+  renderExecute();
+  renderFindings();
+  renderReport();
+}
+function init(){
+  var saved=loadSaved();
+  state=saved||demoState();
+  /* datalist of control refs for findings */
+  var dl=document.createElement('datalist');
+  dl.id='refList';
+  var dlHtml='';
+  CONTROL_LIB.forEach(function(c){ dlHtml+='<option value="'+c.ref+'">'; });
+  dl.innerHTML=dlHtml;
+  document.body.appendChild(dl);
+  bindAll();
+  refreshAll();
+  showView('plan');
+  if(!saved) setTimeout(function(){ toast('Demo audit loaded — click "New audit" for a blank audit, or edit anything to make it yours'); },500);
+}
+init();
+})();
+
+</script>
+</body>
+</html>
